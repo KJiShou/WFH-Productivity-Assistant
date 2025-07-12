@@ -2,7 +2,6 @@ import customtkinter as ctk
 from app.views.home_page import MainView
 
 
-# test
 def run_app():
     app = ctk.CTk()
     app.geometry("600x400")
