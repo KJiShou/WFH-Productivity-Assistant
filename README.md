@@ -1,7 +1,7 @@
 # WFH-Productivity-Assistant
 Degree-Y2S1 SDF Project
 
-## 🔧 Developer Setup
+## Developer Setup
 
 Install dev tools:
 
