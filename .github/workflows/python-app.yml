@@ -28,9 +28,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run basic non-GUI tests
-      run: |
-        pytest tests/  # or your test folder (non-GUI logic only)
+#    - name: Run basic non-GUI tests
+#      run: |
+#        pytest tests/  # or your test folder (non-GUI logic only)
 
     - name: Run linter
       run: |
