@@ -6,6 +6,5 @@ Degree-Y2S1 SDF Project
 Install dev tools:
 
 ```bash
-pip install -r requirements-dev.txt
-pre-commit install
+pip install .[dev]
 ```
