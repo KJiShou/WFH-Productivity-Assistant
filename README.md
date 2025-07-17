@@ -15,3 +15,9 @@ Install python package:
 ```bash
 uv sync
 ```
+
+To run this program:
+
+```bash
+uv run main.py
+```
