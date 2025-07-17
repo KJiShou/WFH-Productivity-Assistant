@@ -1,10 +1,17 @@
 # WFH-Productivity-Assistant
+
 Degree-Y2S1 SDF Project
 
 ## Developer Setup
 
-Install dev tools:
+Install uv
 
 ```bash
-pip install .[dev]
+pip install uv
+```
+
+Install python package:
+
+```bash
+uv sync
 ```
