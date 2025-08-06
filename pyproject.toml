@@ -3,19 +3,20 @@ name = "Work-From-Home-Productivity-Assistant"
 version = "1.0"
 description = "A desktop app built with CustomTkinter to handle work from home task management"
 authors = [
-  { name = "Kong Ji Shou", email = "kongjs-wm23@student.tarc.edu.my" },
-    {name = "Khoo Kah Qin", email = "khookq-wm23@student.tarc.edu.my"},
-    {name = "Heng Wei Yi", email = "hengwy-wm23@student.tarc.edu.my"}
+    { name = "Kong Ji Shou", email = "kongjs-wm23@student.tarc.edu.my" },
+    { name = "Khoo Kah Qin", email = "khookq-wm23@student.tarc.edu.my" },
+    { name = "Heng Wei Yi", email = "hengwy-wm23@student.tarc.edu.my" }
 ]
 requires-python = ">=3.11"
 dependencies = [
-  "customtkinter",
+    "customtkinter",
+    "pywin32>=311",
 ]
 
 [project.optional-dependencies]
 dev = [
-  "black",
-  "flake8",
-  "pytest",
-  "pre-commit"
+    "black",
+    "flake8",
+    "pytest",
+    "pre-commit"
 ]
