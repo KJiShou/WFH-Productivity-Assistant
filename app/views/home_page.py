@@ -12,7 +12,59 @@ from app.utils.theme import (
     USER_FRAME_COLOR,
     TIME_FONT,
     SIDEBAR_HOVER_COLOR,
+    WHITE_COLOR,
+    QUIT_BUTTON_COLOR,
+    QUIT_BUTTON_HOVER_COLOR,
 )
+
+
+class SidebarButton(ctk.CTkButton):
+    def __init__(
+        self,
+        master,
+        text,
+        command=None,
+        font=None,
+        text_color="#FFFFFF",
+        hover_text_color="#000000",
+        fg_color="transparent",
+        hover_color="#444444",
+        corner_radius=15,
+        height=50,
+        anchor="w",
+        **kwargs,
+    ):
+        super().__init__(
+            master=master,
+            text=text,
+            command=command,
+            font=font,
+            text_color=text_color,
+            fg_color=fg_color,
+            hover_color=hover_color,
+            corner_radius=corner_radius,
+            height=height,
+            anchor=anchor,
+            **kwargs,
+        )
+
+        self.default_text_color = text_color
+        self.hover_text_color = hover_text_color
+        self.default_fg_color = fg_color
+        self.hover_fg_color = hover_color
+
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+
+        self.pack(pady=2, padx=5, fill="x")
+
+    def _on_enter(self, event=None):
+        self.configure(text_color=self.hover_text_color, fg_color=self.hover_fg_color)
+
+    def _on_leave(self, event=None):
+        self.configure(
+            text_color=self.default_text_color, fg_color=self.default_fg_color
+        )
 
 
 class MainView(ctk.CTkFrame):
@@ -59,26 +111,74 @@ class MainView(ctk.CTkFrame):
         )
         self.user_label.pack(pady=15, padx=15, anchor="w")
 
-        btn = ctk.CTkButton(
+        dashboard_btn = SidebarButton(
             self.sidebar,
             text="Dashboard",
             font=FONT_NORMAL,
-            fg_color="transparent",
-            hover_color=SIDEBAR_HOVER_COLOR,
             text_color=TEXT_COLOR,
-            anchor="w",
-            height=40,
+            hover_text_color=TITLE_TEXT_COLOR,
+            hover_color=SIDEBAR_HOVER_COLOR,
         )
-        btn.pack(pady=2, padx=20, fill="x")
 
-        def on_enter(e):
-            btn.configure(text_color=TITLE_TEXT_COLOR, fg_color=SIDEBAR_HOVER_COLOR)
+        task_btn = SidebarButton(
+            self.sidebar,
+            text="Task",
+            font=FONT_NORMAL,
+            text_color=TEXT_COLOR,
+            hover_text_color=TITLE_TEXT_COLOR,
+            hover_color=SIDEBAR_HOVER_COLOR,
+        )
 
-        def on_leave(e):
-            btn.configure(text_color=TEXT_COLOR, fg_color="transparent")
+        calender_btn = SidebarButton(
+            self.sidebar,
+            text="Calendar",
+            font=FONT_NORMAL,
+            text_color=TEXT_COLOR,
+            hover_text_color=TITLE_TEXT_COLOR,
+            hover_color=SIDEBAR_HOVER_COLOR,
+        )
 
-        btn.bind("<Enter>", on_enter)
-        btn.bind("<Leave>", on_leave)
+        app_usage_btn = SidebarButton(
+            self.sidebar,
+            text="App Usage",
+            font=FONT_NORMAL,
+            text_color=TEXT_COLOR,
+            hover_text_color=TITLE_TEXT_COLOR,
+            hover_color=SIDEBAR_HOVER_COLOR,
+        )
+
+        settings_btn = SidebarButton(
+            self.sidebar,
+            text="Settings",
+            font=FONT_NORMAL,
+            text_color=TEXT_COLOR,
+            hover_text_color=TITLE_TEXT_COLOR,
+            hover_color=SIDEBAR_HOVER_COLOR,
+        )
+
+        separator = ctk.CTkFrame(self.sidebar, fg_color=WHITE_COLOR, height=2)
+        separator.pack(pady=10, padx=20, fill="x")
+
+        projects_label = ctk.CTkLabel(
+            self.sidebar, text="Projects", font=FONT_NORMAL, text_color=TEXT_COLOR
+        )
+        projects_label.pack(pady=(10, 5), padx=20, anchor="w")
+
+        quit_btn = ctk.CTkButton(
+            self.sidebar,
+            text="Quit",
+            font=FONT_NORMAL,
+            fg_color=QUIT_BUTTON_COLOR,
+            hover_color="#e67878",
+            text_color=TITLE_TEXT_COLOR,
+            height=40,
+            command=self.quit_app,
+        )
+        quit_btn.pack(side="bottom", pady=20, padx=20, fill="x")
+
+    def quit_app(self):
+        self.quit()
+        self.destroy()
 
     def create_main(self):
         # Main content frame
