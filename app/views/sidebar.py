@@ -58,23 +58,30 @@ class SidebarButton(ctk.CTkButton):
             **kwargs,
         )
 
+        # text configuration
         self.default_text_color = text_color
         self.hover_text_color = hover_text_color
+        self.active_text_color = active_text_color
+
+        # button fg color configuration
         self.default_fg_color = fg_color
         self.hover_fg_color = hover_color
         self.active_fg_color = active_fg_color
-        self.active_text_color = active_text_color
+
         # CTkImage objects for light/dark icons
         self.icon_light = icon_light
         self.icon_dark = icon_dark
 
+        # flag for button active or not
         self._active = False
 
+        # func for enter and leave
         self.bind("<Enter>", self._on_enter)
         self.bind("<Leave>", self._on_leave)
 
         self.pack(pady=2, padx=5, fill="x")
 
+    # check current focusing UI
     def set_active(self, active: bool):
         self._active = active
         if active:
@@ -93,6 +100,7 @@ class SidebarButton(ctk.CTkButton):
                 image=self.icon_light,
             )
 
+    # check mouse focus on the button
     def _on_enter(self, event=None):
         if not self._active:
             self.configure(
@@ -101,6 +109,7 @@ class SidebarButton(ctk.CTkButton):
                 image=(self.icon_dark),
             )
 
+    # check mouse not focus on the button
     def _on_leave(self, event=None):
         if not self._active:
             self.configure(
@@ -113,7 +122,7 @@ class SidebarButton(ctk.CTkButton):
 class MainView(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master, fg_color=BACKGROUND_COLOR)
-
+        # create sidebar and main frame
         self.create_sidebar()
         self.create_main()
 
@@ -154,6 +163,7 @@ class MainView(ctk.CTkFrame):
         )
         self.user_label.pack(pady=15, padx=15, anchor="w")
 
+        # create button
         self.buttons = {}
 
         dashboard_icon_dark = ctk.CTkImage(
@@ -164,7 +174,6 @@ class MainView(ctk.CTkFrame):
             Image.open("app/assets/dashboard_icon_white.png"),
             size=(20, 20),
         )
-
         dashboard_btn = SidebarButton(
             self.sidebar,
             text="Dashboard",
@@ -179,7 +188,6 @@ class MainView(ctk.CTkFrame):
             compound="left",
             anchor="w",
         )
-
         self.buttons["Dashboard"] = dashboard_btn
 
         task_icon_dark = ctk.CTkImage(
