@@ -23,6 +23,7 @@ TITLE_TEXT_COLOR = "#000000"
 TEXT_COLOR = "#ffffff"
 ICON_WHITE_COLOR = "#ffffff"
 WHITE_COLOR = "#ffffff"
+BLACK_COLOR = "#000000"
 ICON_BLACK_COLOR = "#000000"
 
 # Button
