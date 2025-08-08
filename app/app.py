@@ -1,7 +1,7 @@
 import customtkinter as ctk
 
 from app.utils.theme import WIN_SIZE
-from app.views.home_page import MainView
+from app.views.sidebar import MainView
 
 
 def run_app():

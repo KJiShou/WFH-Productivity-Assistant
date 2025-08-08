@@ -16,6 +16,9 @@ from app.utils.theme import (
     QUIT_BUTTON_COLOR,
     QUIT_BUTTON_HOVER_COLOR,
 )
+from app.views.dashboard import DashboardPage
+from app.views.schedule_manager import SchedulePage
+from app.views.task_manager import TaskPage
 
 
 class SidebarButton(ctk.CTkButton):
@@ -118,6 +121,7 @@ class MainView(ctk.CTkFrame):
             text_color=TEXT_COLOR,
             hover_text_color=TITLE_TEXT_COLOR,
             hover_color=SIDEBAR_HOVER_COLOR,
+            command=lambda: self.show_page("Dashboard"),
         )
 
         task_btn = SidebarButton(
@@ -127,33 +131,17 @@ class MainView(ctk.CTkFrame):
             text_color=TEXT_COLOR,
             hover_text_color=TITLE_TEXT_COLOR,
             hover_color=SIDEBAR_HOVER_COLOR,
+            command=lambda: self.show_page("Task"),
         )
 
-        calender_btn = SidebarButton(
+        schedule_btn = SidebarButton(
             self.sidebar,
-            text="Calendar",
+            text="Schedule",
             font=FONT_NORMAL,
             text_color=TEXT_COLOR,
             hover_text_color=TITLE_TEXT_COLOR,
             hover_color=SIDEBAR_HOVER_COLOR,
-        )
-
-        app_usage_btn = SidebarButton(
-            self.sidebar,
-            text="App Usage",
-            font=FONT_NORMAL,
-            text_color=TEXT_COLOR,
-            hover_text_color=TITLE_TEXT_COLOR,
-            hover_color=SIDEBAR_HOVER_COLOR,
-        )
-
-        settings_btn = SidebarButton(
-            self.sidebar,
-            text="Settings",
-            font=FONT_NORMAL,
-            text_color=TEXT_COLOR,
-            hover_text_color=TITLE_TEXT_COLOR,
-            hover_color=SIDEBAR_HOVER_COLOR,
+            command=lambda: self.show_page("Schedule"),
         )
 
         separator = ctk.CTkFrame(self.sidebar, fg_color=WHITE_COLOR, height=2)
@@ -180,25 +168,32 @@ class MainView(ctk.CTkFrame):
         self.quit()
         self.destroy()
 
+    def show_page(self, name: str):
+        page = self.pages.get(name)
+        if page:
+            page.tkraise()
+
     def create_main(self):
-        # Main content frame
         self.content_frame = ctk.CTkFrame(self, fg_color=BACKGROUND_COLOR)
         self.content_frame.pack(
             side="right", fill="both", expand=True, padx=10, pady=10
         )
 
-        # Header frame
-        self.header_frame = ctk.CTkFrame(
-            self.content_frame, fg_color="transparent", height=80
-        )
-        self.header_frame.pack(fill="x", pady=(0, 10))
-        self.header_frame.pack_propagate(False)
+        self.page_container = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        self.page_container.pack(fill="both", expand=True, padx=0, pady=0)
 
-        # Current time label
-        self.time_label = ctk.CTkLabel(
-            self.header_frame,
-            text="Today Is: Loading...",
-            font=TIME_FONT,
-            text_color=TITLE_TEXT_COLOR,
-        )
-        self.time_label.pack(anchor="nw", padx=10, pady=10)
+        # allow the page to expand
+        self.page_container.grid_rowconfigure(0, weight=1)
+        self.page_container.grid_columnconfigure(0, weight=1)
+
+        # Pre-create pages and store in a dict
+        self.pages = {
+            "Dashboard": DashboardPage(self.page_container),
+            "Task": TaskPage(self.page_container),
+            "Schedule": SchedulePage(self.page_container),
+        }
+        for page in self.pages.values():
+            page.grid(row=0, column=0, sticky="nsew")  # stack them
+
+        # Start with dashboard
+        self.show_page("Dashboard")
