@@ -16,6 +16,12 @@ Install python package:
 uv sync
 ```
 
+Format code:
+
+```bash
+black .
+```
+
 To run this program:
 
 ```bash
