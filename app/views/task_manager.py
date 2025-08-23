@@ -2,6 +2,7 @@ import calendar
 import datetime as dt
 import re
 import tkinter as tk
+import tkinter.messagebox as msgbox
 from typing import Optional
 
 import customtkinter as ctk
@@ -470,10 +471,14 @@ class EditProjectDialog(ctk.CTkToplevel):
         bar = ctk.CTkFrame(self, fg_color="transparent")
         bar.pack(fill="x", padx=12, pady=12)
 
-        # Fixed: Added proper spacing between Cancel and Save buttons
-        ctk.CTkButton(bar, text="Cancel", command=self.destroy).pack(side="right")
+        ctk.CTkButton(
+            bar, text="Delete", command=self._delete_project, fg_color="red"
+        ).pack(side="right")
+        ctk.CTkButton(bar, text="Cancel", command=self.destroy).pack(
+            side="right", padx=(0, 16)
+        )
         ctk.CTkButton(bar, text="Save", command=self._save).pack(
-            side="right", padx=(0, 16)  # Added 16px gap between buttons
+            side="right", padx=(0, 16)
         )
 
     def _save(self):
@@ -483,6 +488,15 @@ class EditProjectDialog(ctk.CTkToplevel):
             return
         self.on_save(self.proj, name, color)
         self.destroy()
+
+    def _delete_project(self):
+        # Confirm deletion
+        if msgbox.askyesno(
+            "Delete Project",
+            f"Are you sure you want to delete '{self.proj.name}'?\n\nThis action cannot be undone.",
+        ):
+            self.on_save(self.proj, None, None)  # Signal deletion with None values
+            self.destroy()
 
 
 # ------------------ Task row (toggle + flat title + right-side chips) ------------------
@@ -743,13 +757,22 @@ class TaskPage(ctk.CTkFrame):
     def _save_project_edit(
         self, proj: Project, new_name: str, new_color: Optional[str]
     ):
-        old_name = proj.name
-        self.pm.update_project(proj.id, name=new_name, color=new_color)
-        # rename in tasks (since tasks store project by *name*)
-        tasks = self.tm.view_tasks()
-        for t in tasks:
-            if t.project == old_name:
-                self.tm.update_task(t.id, project=new_name)
+        if new_name is None:
+            # Remove project
+            self.pm.delete_project(proj.id)
+            # Clear project from tasks
+            tasks = self.tm.view_tasks()
+            for t in tasks:
+                if t.project == proj.name:
+                    self.tm.update_task(t.id, project=None)
+        else:
+            old_name = proj.name
+            self.pm.update_project(proj.id, name=new_name, color=new_color)
+            tasks = self.tm.view_tasks()
+            for t in tasks:
+                if t.project == old_name:
+                    self.tm.update_task(t.id, project=new_name)
+
         self._reload_and_render()
 
     def _open_add_project(self):
@@ -827,12 +850,9 @@ class TaskPage(ctk.CTkFrame):
 
         # tasks (optionally filtered by selected date)
         tasks = self.tm.view_tasks()
-        if self._selected_date:
-            target = self._selected_date.strftime(DATE_FMT)
-            tasks = [t for t in tasks if t.due_date == target]
 
         # group like mock
-        today = dt.date.today()
+        today = self._selected_date if self._selected_date else dt.date.today()
         start_week = today - dt.timedelta(days=today.weekday())
         end_week = start_week + dt.timedelta(days=6)
         last7_start = today - dt.timedelta(days=7)
@@ -873,7 +893,7 @@ class TaskPage(ctk.CTkFrame):
         # section builder
         def section(title, items):
             row = ctk.CTkFrame(self.task_list, fg_color="transparent")
-            ctk.CTkLabel(row, text=f"▾ {title}", font=("Inter", 14, "bold")).pack(
+            ctk.CTkLabel(row, text=f"{title}", font=("Inter", 14, "bold")).pack(
                 side="left"
             )
             ctk.CTkLabel(
