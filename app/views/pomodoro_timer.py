@@ -8,12 +8,18 @@ TIMER_MIDDLE_MIDDLE_COLOR = "#969696"
 TIMER_BOTTOM_MIDDLE_COLOR = "#D9D9D9"
 TIMER_HOVER_COLOR = "#FFFFFF"  # transparency 50%
 
+
 class TimerPage(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master, fg_color="transparent")
 
         # === Header ===
-        ctk.CTkLabel(self, text="Timer", font=("Times New Roman", 18), text_color=TIMER_HOVER_COLOR).pack(anchor="w", padx=10, pady=10)
+        ctk.CTkLabel(
+            self,
+            text="Timer",
+            font=("Times New Roman", 18),
+            text_color=TIMER_HOVER_COLOR,
+        ).pack(anchor="w", padx=10, pady=10)
 
         # === Real Time Display ===
         self.timeNow = ctk.CTkLabel(self, text="", text_color=TIMER_HOVER_COLOR)
@@ -30,7 +36,7 @@ class TimerPage(ctk.CTkFrame):
         self.progressBar.set(100)
 
         # === Scroll Pickers ===
-        self.scrollFrame = ctk.CTkFrame(self, fg_color="transparent")
+        self.scrollFrame = ctk.CTkFrame(self)
         self.scrollFrame.pack(pady=10)
 
         self.minutesBox = self.picker(self.scrollFrame, 60, 0, default_value=0)
@@ -44,26 +50,32 @@ class TimerPage(ctk.CTkFrame):
 
         # === Control Buttons ===
         startImg = ctk.CTkImage(
-            Image.open("assets/StartIcon.png"),
+            Image.open("app/assets/StartIcon.png"),
             size=(20, 20),
         )
         stopImg = ctk.CTkImage(
-            Image.open("assets/StopIcon.png"),
+            Image.open("app/assets/StopIcon.png"),
             size=(20, 20),
         )
         resetImg = ctk.CTkImage(
-            Image.open("assets/ResetIcon.png"),
+            Image.open("app/assets/ResetIcon.png"),
             size=(20, 20),
         )
 
         self.buttonFrame = ctk.CTkFrame(self)
         self.buttonFrame.pack(pady=10)
 
-        self.startButton = ctk.CTkButton(self.buttonFrame, text="Start", image = startImg, command=self.startTimer)
-        self.stopButton = ctk.CTkButton(self.buttonFrame, text="Stop", image = stopImg, command=self.stopTimer)
+        self.startButton = ctk.CTkButton(
+            self.buttonFrame, text="Start", image=startImg, command=self.startTimer
+        )
+        self.stopButton = ctk.CTkButton(
+            self.buttonFrame, text="Stop", image=stopImg, command=self.stopTimer
+        )
         self.startButton.pack(pady=0)
 
-        self.resetButton = ctk.CTkButton(self, text="Reset", image = resetImg, command=self.resetTimer)
+        self.resetButton = ctk.CTkButton(
+            self, text="Reset", image=resetImg, command=self.resetTimer
+        )
         self.resetButton.pack(pady=10)
 
         # Timer state
@@ -101,7 +113,7 @@ class TimerPage(ctk.CTkFrame):
             fg="white",
             highlightthickness=0,
             selectbackground="#444444",
-            font=("Times New Roman", 17)
+            font=("Times New Roman", 17),
         )
         listBox.pack()
 
@@ -122,13 +134,13 @@ class TimerPage(ctk.CTkFrame):
                 return "break"
             current = listBox.curselection()[0]
 
-            if event.delta > 0:   # scroll up
+            if event.delta > 0:  # scroll up
                 if current > 0:
                     new_index = current - 1
                     listBox.selection_clear(0, tk.END)
                     listBox.selection_set(new_index)
                     listBox.see(new_index)
-            else:   # scroll down
+            else:  # scroll down
                 if current < listBox.size() - 1:
                     new_index = current + 1
                     listBox.selection_clear(0, tk.END)
@@ -146,8 +158,12 @@ class TimerPage(ctk.CTkFrame):
             return "break"
 
         listBox.bind("<MouseWheel>", on_mouse_wheel)
-        listBox.bind("<Button-4>", lambda e: on_mouse_wheel(type("Event", (), {"delta": 120})))
-        listBox.bind("<Button-5>", lambda e: on_mouse_wheel(type("Event", (), {"delta": -120})))
+        listBox.bind(
+            "<Button-4>", lambda e: on_mouse_wheel(type("Event", (), {"delta": 120}))
+        )
+        listBox.bind(
+            "<Button-5>", lambda e: on_mouse_wheel(type("Event", (), {"delta": -120}))
+        )
 
     def hideScrollBar(self):
         for widget in self.scrollFrame.winfo_children():
@@ -224,3 +240,12 @@ class TimerPage(ctk.CTkFrame):
         self.remaining_second = 0
         self.progressBar.set(100)
         self.run_timer = False
+
+
+if __name__ == "__main__":
+    app = ctk.CTk()
+    app.geometry("400x600")
+    app.title("Timer Test App")
+    timer_page_instance = TimerPage(app)
+    timer_page_instance.pack(fill="both", expand=True)
+    app.mainloop()

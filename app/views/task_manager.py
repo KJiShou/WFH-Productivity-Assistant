@@ -20,6 +20,7 @@ from app.controllers.task_manager_controller import (
     DATE_FMT,
 )
 from app.controllers.project_manager_controller import ProjectManagerController, Project
+from app.views.pomodoro_timer import TimerPage
 
 # ---------- helpers ----------
 _HEX6 = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -37,7 +38,7 @@ def _pill(master, text, bg, on_click=None):
         corner_radius=12,
         fg_color=bg,
         text_color=BLACK_COLOR,
-        hover_color=bg,  # keep solid
+        hover_color=bg,
         command=on_click if on_click else lambda: None,
     )
     return btn
@@ -600,7 +601,6 @@ class TaskPage(ctk.CTkFrame):
         right_cta = ctk.CTkFrame(row, fg_color="transparent")
         right_cta.pack(side="right")
 
-        # Fixed: Added proper spacing between Add Project and Add New Task buttons
         ctk.CTkButton(
             right_cta,
             text="+ Add Project",
@@ -610,9 +610,7 @@ class TaskPage(ctk.CTkFrame):
             text_color="#FFFFFF",
             hover_color="#555555",
             command=self._open_add_project,
-        ).pack(
-            side="right", padx=(0, 16)
-        )  # Added 16px gap between buttons
+        ).pack(side="right", padx=(0, 16))
 
         ctk.CTkButton(
             right_cta,
@@ -649,7 +647,6 @@ class TaskPage(ctk.CTkFrame):
         )
         self.task_list.pack(fill="both", expand=True, padx=10, pady=(4, 10))
 
-        # Projects area (dynamic cards, clickable to edit)
         proj_wrap = ctk.CTkFrame(left, fg_color="transparent")
         proj_wrap.grid(row=1, column=0, sticky="ew", pady=(8, 0))
         ctk.CTkLabel(proj_wrap, text="Project", font=("Inter", 14, "bold")).pack(
@@ -668,12 +665,57 @@ class TaskPage(ctk.CTkFrame):
 
         # context menu (Edit/Delete/Timer)
         self.menu = tk.Menu(self, tearoff=False)
-        self.menu.add_command(label="Edit", command=self._menu_edit)
-        self.menu.add_command(label="Delete", command=self._menu_delete)
-        self.menu.add_command(label="Timer", command=lambda: None)
+        self.menu.add_command(
+            label="Edit", command=self._menu_edit, font=("Inter", 10, "bold")
+        )
+        self.menu.add_command(
+            label="Delete", command=self._menu_delete, font=("Inter", 10, "bold")
+        )
+        self.menu.add_command(
+            label="Timer", command=self._open_timer_window, font=("Inter", 10, "bold")
+        )
         self._menu_task: Optional[Task] = None
 
         self._reload_and_render()
+
+    def _open_timer_window(self):
+        """Open timer window for the selected task"""
+        if not hasattr(self, "timer_window"):
+            self.timer_window = None
+
+        if self.timer_window is None or not self.timer_window.winfo_exists():
+            self.timer_window = ctk.CTkToplevel(self)
+            task_title = self._menu_task.title if self._menu_task else "Timer"
+            self.timer_window.title(f"Timer - {task_title}")
+            self.timer_window.geometry("350x550")
+            self.timer_window.resizable(False, False)
+            self.timer_window.attributes("-topmost", True)
+
+            # Create timer frame with padding
+            timer_frame = TimerPage(self.timer_window)
+            timer_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+            # Handle window close event
+            self.timer_window.protocol("WM_DELETE_WINDOW", self._on_timer_window_close)
+        else:
+            # If window already exists, just focus it
+            self.timer_window.focus_set()
+            self.timer_window.lift()
+
+    def _on_timer_window_close(self):
+        """Handle timer window closing"""
+        if self.timer_window:
+            # Find and shutdown any timer instances
+            for child in self.timer_window.winfo_children():
+                if isinstance(child, TimerPage):
+                    try:
+                        child._shutdown_timer()
+                    except AttributeError:
+                        # If _shutdown_timer doesn't exist, just pass
+                        pass
+                    break
+            self.timer_window.destroy()
+            self.timer_window = None
 
     # ---------- top actions ----------
     def _open_add_task(self):
