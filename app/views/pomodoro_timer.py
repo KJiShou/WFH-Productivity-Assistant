@@ -1,6 +1,7 @@
 import tkinter as tk
 import customtkinter as ctk
 import time
+from PIL import Image
 
 TIMER_TOP_MIDDLE_COLOR = "#565656"
 TIMER_MIDDLE_MIDDLE_COLOR = "#969696"
@@ -12,9 +13,7 @@ class TimerPage(ctk.CTkFrame):
         super().__init__(master, fg_color="transparent")
 
         # === Header ===
-        ctk.CTkLabel(
-            self, text="Timer", font=("Times New Roman", 18), text_color=TIMER_HOVER_COLOR
-        ).pack(anchor="w", padx=10, pady=10)
+        ctk.CTkLabel(self, text="Timer", font=("Times New Roman", 18), text_color=TIMER_HOVER_COLOR).pack(anchor="w", padx=10, pady=10)
 
         # === Real Time Display ===
         self.timeNow = ctk.CTkLabel(self, text="", text_color=TIMER_HOVER_COLOR)
@@ -31,7 +30,7 @@ class TimerPage(ctk.CTkFrame):
         self.progressBar.set(100)
 
         # === Scroll Pickers ===
-        self.scrollFrame = ctk.CTkFrame(self)
+        self.scrollFrame = ctk.CTkFrame(self, fg_color="transparent")
         self.scrollFrame.pack(pady=10)
 
         self.minutesBox = self.picker(self.scrollFrame, 60, 0, default_value=0)
@@ -44,14 +43,27 @@ class TimerPage(ctk.CTkFrame):
         self.secondsBox.bind("<<ListboxSelect>>", self.totalSec)
 
         # === Control Buttons ===
+        startImg = ctk.CTkImage(
+            Image.open("app/assets/StartIcon.png"),
+            size=(20, 20),
+        )
+        stopImg = ctk.CTkImage(
+            Image.open("app/assets/StopIcon.png"),
+            size=(20, 20),
+        )
+        resetImg = ctk.CTkImage(
+            Image.open("app/assets/ResetIcon.png"),
+            size=(20, 20),
+        )
+
         self.buttonFrame = ctk.CTkFrame(self)
         self.buttonFrame.pack(pady=10)
 
-        self.startButton = ctk.CTkButton(self.buttonFrame, text="Start", command=self.startTimer)
-        self.stopButton = ctk.CTkButton(self.buttonFrame, text="Stop", command=self.stopTimer)
+        self.startButton = ctk.CTkButton(self.buttonFrame, text="Start", Image = startImg, command=self.startTimer)
+        self.stopButton = ctk.CTkButton(self.buttonFrame, text="Stop", Image = stopImg, command=self.stopTimer)
         self.startButton.pack(pady=0)
 
-        self.resetButton = ctk.CTkButton(self, text="Reset", command=self.resetTimer)
+        self.resetButton = ctk.CTkButton(self, text="Reset", Image = resetImg, command=self.resetTimer)
         self.resetButton.pack(pady=10)
 
         # Timer state
@@ -212,3 +224,15 @@ class TimerPage(ctk.CTkFrame):
         self.remaining_second = 0
         self.progressBar.set(100)
         self.run_timer = False
+
+# === Run Test App ===
+if __name__ == "__main__":
+    ctk.set_appearance_mode("dark")
+    window = ctk.CTk()
+    window.title("Timer")
+    window.geometry("500x500")
+
+    page = TimerPage(window)
+    page.pack(fill="both", expand=True)
+
+    window.mainloop()
