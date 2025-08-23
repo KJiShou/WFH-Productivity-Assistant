@@ -166,30 +166,6 @@ class MainView(ctk.CTkFrame):
         # create button
         self.buttons = {}
 
-        dashboard_icon_dark = ctk.CTkImage(
-            Image.open("app/assets/dashboard_icon_black.png"),
-            size=(20, 20),
-        )
-        dashboard_icon_light = ctk.CTkImage(
-            Image.open("app/assets/dashboard_icon_white.png"),
-            size=(20, 20),
-        )
-        dashboard_btn = SidebarButton(
-            self.sidebar,
-            text="Dashboard",
-            icon_dark=dashboard_icon_dark,
-            icon_light=dashboard_icon_light,
-            font=FONT_NORMAL,
-            text_color=TEXT_COLOR,
-            hover_text_color=TITLE_TEXT_COLOR,
-            hover_color=SIDEBAR_HOVER_COLOR,
-            command=lambda: self.show_page("Dashboard"),
-            image=dashboard_icon_light,
-            compound="left",
-            anchor="w",
-        )
-        self.buttons["Dashboard"] = dashboard_btn
-
         task_icon_dark = ctk.CTkImage(
             Image.open("app/assets/task_icon_black.png"),
             size=(20, 20),
@@ -242,14 +218,6 @@ class MainView(ctk.CTkFrame):
 
         self.buttons["Schedule"] = schedule_btn
 
-        separator = ctk.CTkFrame(self.sidebar, fg_color=WHITE_COLOR, height=2)
-        separator.pack(pady=10, padx=20, fill="x")
-
-        projects_label = ctk.CTkLabel(
-            self.sidebar, text="Projects", font=FONT_NORMAL, text_color=TEXT_COLOR
-        )
-        projects_label.pack(pady=(10, 5), padx=20, anchor="w")
-
         quit_btn = ctk.CTkButton(
             self.sidebar,
             text="Quit",
@@ -289,7 +257,6 @@ class MainView(ctk.CTkFrame):
 
         # Pre-create pages and store in a dict
         self.pages = {
-            "Dashboard": DashboardPage(self.page_container),
             "Task": TaskPage(self.page_container),
             "Schedule": SchedulePage(self.page_container),
         }
@@ -297,4 +264,4 @@ class MainView(ctk.CTkFrame):
             page.grid(row=0, column=0, sticky="nsew")  # stack them
 
         # Start with dashboard
-        self.show_page("Dashboard")
+        self.show_page("Task")
