@@ -1,13 +1,14 @@
 import tkinter as tk
+import tkinter.messagebox as messagebox
 import customtkinter as ctk
 import time
 from PIL import Image
+import winsound
 
 TIMER_TOP_MIDDLE_COLOR = "#565656"
 TIMER_MIDDLE_MIDDLE_COLOR = "#969696"
 TIMER_BOTTOM_MIDDLE_COLOR = "#D9D9D9"
 TIMER_HOVER_COLOR = "#FFFFFF"  # transparency 50%
-
 
 class TimerPage(ctk.CTkFrame):
     def __init__(self, master):
@@ -17,9 +18,9 @@ class TimerPage(ctk.CTkFrame):
         ctk.CTkLabel(
             self,
             text="Timer",
-            font=("Times New Roman", 18),
+            font=("Times New Roman", 18, "underline"),
             text_color=TIMER_HOVER_COLOR,
-        ).pack(anchor="w", padx=10, pady=10)
+        ).pack(anchor="center", padx=10, pady=10)
 
         # === Real Time Display ===
         self.timeNow = ctk.CTkLabel(self, text="", text_color=TIMER_HOVER_COLOR)
@@ -36,7 +37,7 @@ class TimerPage(ctk.CTkFrame):
         self.progressBar.set(100)
 
         # === Scroll Pickers ===
-        self.scrollFrame = ctk.CTkFrame(self)
+        self.scrollFrame = ctk.CTkFrame(self, fg_color = "transparent")
         self.scrollFrame.pack(pady=10)
 
         self.minutesBox = self.picker(self.scrollFrame, 60, 0, default_value=0)
@@ -48,7 +49,31 @@ class TimerPage(ctk.CTkFrame):
         self.minutesBox.bind("<<ListboxSelect>>", self.totalSec)
         self.secondsBox.bind("<<ListboxSelect>>", self.totalSec)
 
+        # === Preset Time Button ===
+        self.presetFrame = ctk.CTkFrame(self, fg_color="transparent")
+        self.presetFrame.pack(pady=10)
+
+        button_style = {
+            "width": 50,
+            "height": 50,
+            "corner_radius": 30,  # half of width/height → circle
+            "fg_color": "#555555",  # gray background
+            "text_color": "white",  # white text
+            "font": ("Times New Roman", 14, "bold")
+        }
+
+        self.button1 = ctk.CTkButton(self.presetFrame, text="15:00", command=lambda: self.setTime(15, 0), **button_style)
+        self.button2 = ctk.CTkButton(self.presetFrame, text="30:00", command=lambda: self.setTime(30, 0), **button_style)
+        self.button3 = ctk.CTkButton(self.presetFrame, text="59:59", command=lambda: self.setTime(59, 59), **button_style)
+
+        self.button1.grid(row=0, column=0, padx=10)
+        self.button2.grid(row=0, column=1, padx=10)
+        self.button3.grid(row=0, column=2, padx=10)
+
         # === Control Buttons ===
+        self.buttonFrame = ctk.CTkFrame(self)
+        self.buttonFrame.pack(pady=10)
+
         startImg = ctk.CTkImage(
             Image.open("app/assets/StartIcon.png"),
             size=(20, 20),
@@ -62,9 +87,6 @@ class TimerPage(ctk.CTkFrame):
             size=(20, 20),
         )
 
-        self.buttonFrame = ctk.CTkFrame(self)
-        self.buttonFrame.pack(pady=10)
-
         self.startButton = ctk.CTkButton(
             self.buttonFrame, text="Start", image=startImg, command=self.startTimer
         )
@@ -76,12 +98,26 @@ class TimerPage(ctk.CTkFrame):
         self.resetButton = ctk.CTkButton(
             self, text="Reset", image=resetImg, command=self.resetTimer
         )
-        self.resetButton.pack(pady=10)
+        self.resetButton.pack(pady=0)
 
         # Timer state
         self.run_timer = False
         self.remaining_second = 0
         self.totalTime = 0
+
+    def showImagePopup(self):
+        popup = ctk.CTkToplevel(self)
+        popup.geometry("400x600")
+        popup.grab_set()  # make modal
+
+        # Load image
+        img = ctk.CTkImage(Image.open("app/assets/timesup.jpg"), size=(350, 500))
+
+        label = ctk.CTkLabel(popup, image=img, text="")
+        label.pack(pady=20)
+        label.image = img  # prevent garbage collection
+
+        ctk.CTkButton(popup, text="OK", command=popup.destroy).pack(pady=10)
 
     # === Real Time Clock ===
     def currentTime(self):
@@ -173,6 +209,11 @@ class TimerPage(ctk.CTkFrame):
         for widget in self.scrollFrame.winfo_children():
             widget.grid()
 
+    def setTime(self, minute, second):
+        self.timeSet.configure(text=f"{minute:02d} : {second:02d}")
+        self.remaining_second = minute * 60 + second
+        self.totalTime = self.remaining_second
+
     def totalSec(self, event=None):
         try:
             minute = int(self.minutesBox.get(self.minutesBox.curselection()))
@@ -195,10 +236,30 @@ class TimerPage(ctk.CTkFrame):
 
             self.remaining_second -= 1
             self.timeSet.after(1000, self.updateTimer)
-        elif self.remaining_second == 0:
+        elif self.remaining_second == 0 and self.run_timer:
+            self.run_timer = False
             self.timeSet.configure(text="00 : 00")
             self.progressBar.set(100)
-            self.run_timer = False
+
+            self.showScrollBar()
+            self.stopButton.pack_forget()
+            self.startButton.pack()
+
+            self.button1.grid()
+            self.button2.grid()
+            self.button3.grid()
+
+            self.minutesBox.selection_clear(0, "end")
+            self.minutesBox.selection_set(0)
+            self.minutesBox.see(0)
+
+            self.secondsBox.selection_clear(0, "end")
+            self.secondsBox.selection_set(0)
+            self.secondsBox.see(0)
+
+            winsound.PlaySound("app/assets/alarm.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
+            self.showImagePopup()
+            #messagebox.showinfo("Time's Up!", "The countdown is over.")
 
     def startTimer(self):
         if self.run_timer:
@@ -213,8 +274,16 @@ class TimerPage(ctk.CTkFrame):
 
         self.run_timer = True
         self.hideScrollBar()
+
+        # Hide start button and show stop button
         self.startButton.pack_forget()
         self.stopButton.pack()
+
+        # Hide preset time button
+        self.button1.grid_remove()
+        self.button2.grid_remove()
+        self.button3.grid_remove()
+
         self.updateTimer()
 
     def stopTimer(self):
@@ -229,6 +298,10 @@ class TimerPage(ctk.CTkFrame):
         self.stopButton.pack_forget()
         self.startButton.pack()
 
+        self.button1.grid()
+        self.button2.grid()
+        self.button3.grid()
+
         self.minutesBox.selection_clear(0, "end")
         self.minutesBox.selection_set(0)
         self.minutesBox.see(0)
@@ -241,11 +314,14 @@ class TimerPage(ctk.CTkFrame):
         self.progressBar.set(100)
         self.run_timer = False
 
-
+# === Run Test App ===
 if __name__ == "__main__":
-    app = ctk.CTk()
-    app.geometry("400x600")
-    app.title("Timer Test App")
-    timer_page_instance = TimerPage(app)
-    timer_page_instance.pack(fill="both", expand=True)
-    app.mainloop()
+    ctk.set_appearance_mode("dark")
+    window = ctk.CTk()
+    window.title("Timer")
+    window.geometry("500x500")
+
+    page = TimerPage(window)
+    page.pack(fill="both", expand=True)
+
+    window.mainloop()
