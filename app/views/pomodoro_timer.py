@@ -1,5 +1,4 @@
 import tkinter as tk
-import tkinter.messagebox as messagebox
 import customtkinter as ctk
 import time
 from PIL import Image
