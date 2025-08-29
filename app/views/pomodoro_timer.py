@@ -63,7 +63,7 @@ class TimerPage(ctk.CTkFrame):
 
         self.button1 = ctk.CTkButton(self.presetFrame, text="15:00", command=lambda: self.setTime(15, 0), **button_style)
         self.button2 = ctk.CTkButton(self.presetFrame, text="30:00", command=lambda: self.setTime(30, 0), **button_style)
-        self.button3 = ctk.CTkButton(self.presetFrame, text="59:59", command=lambda: self.setTime(59, 59), **button_style)
+        self.button3 = ctk.CTkButton(self.presetFrame, text="60:00", command=lambda: self.setTime(60, 0), **button_style)
 
         self.button1.grid(row=0, column=0, padx=10)
         self.button2.grid(row=0, column=1, padx=10)
@@ -225,7 +225,7 @@ class TimerPage(ctk.CTkFrame):
     def updateTimer(self):
         if self.run_timer and self.remaining_second > 0:
             seconds = int(self.remaining_second % 60)
-            minutes = int((self.remaining_second // 60) % 60)
+            minutes = int(self.remaining_second // 60)
 
             self.timeSet.configure(text=f"{minutes:02d} : {seconds:02d}")
 
@@ -268,7 +268,7 @@ class TimerPage(ctk.CTkFrame):
             self.remaining_second = self.totalSec()
             self.totalTime = self.remaining_second
 
-        if self.remaining_second == 0 or self.remaining_second >= 3600:
+        if self.remaining_second == 0 or self.remaining_second >= 3601:
             return
 
         self.run_timer = True
