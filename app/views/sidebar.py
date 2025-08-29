@@ -19,11 +19,11 @@ from app.utils.theme import (
     QUIT_BUTTON_HOVER_COLOR,
     BLACK_COLOR,
 )
-from app.views.dashboard import DashboardPage
 from app.views.schedule_manager import SchedulePage
 from app.views.task_manager import TaskPage
 
 
+# Custom sidebar button with hover effects and active state styling
 class SidebarButton(ctk.CTkButton):
     def __init__(
         self,
@@ -119,6 +119,7 @@ class SidebarButton(ctk.CTkButton):
             )
 
 
+# Main application view with sidebar navigation and page container
 class MainView(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master, fg_color=BACKGROUND_COLOR)
@@ -146,22 +147,47 @@ class MainView(ctk.CTkFrame):
         self.sidebar.pack(side="left", fill="y", padx=0, pady=0)
         self.sidebar.pack_propagate(False)
 
-        # Welcome text
-        self.welcome_label = ctk.CTkLabel(
-            self.sidebar, text="Welcome,", font=FONT_NORMAL, text_color=TEXT_COLOR
-        )
-        self.welcome_label.pack(anchor="nw", padx=15, pady=(10, 0))
+        # App title and welcome area
+        self.title_frame = ctk.CTkFrame(self.sidebar, fg_color="transparent")
+        self.title_frame.pack(pady=(15, 10), padx=15, fill="x")
 
-        self.user_frame = ctk.CTkFrame(
-            self.sidebar, fg_color=USER_FRAME_COLOR, height=60
+        self.app_title = ctk.CTkLabel(
+            self.title_frame,
+            text="WFH Assistant",
+            font=("Arial", 18, "bold"),
+            text_color=WHITE_COLOR,
         )
-        self.user_frame.pack(pady=(10, 20), padx=10, fill="x")
-        self.user_frame.pack_propagate(False)
+        self.app_title.pack(anchor="w")
 
-        self.user_label = ctk.CTkLabel(
-            self.user_frame, text="User", font=FONT_NORMAL, text_color=TITLE_TEXT_COLOR
+        self.subtitle = ctk.CTkLabel(
+            self.title_frame,
+            text="Stay productive at home",
+            font=("Arial", 11),
+            text_color="#CCCCCC",
         )
-        self.user_label.pack(pady=15, padx=15, anchor="w")
+        self.subtitle.pack(anchor="w", pady=(2, 0))
+
+        # Status indicator
+        self.status_frame = ctk.CTkFrame(
+            self.sidebar, fg_color="#4A4A4A", height=45, corner_radius=10
+        )
+        self.status_frame.pack(pady=(5, 20), padx=15, fill="x")
+        self.status_frame.pack_propagate(False)
+
+        # Status indicator with dot
+        self.status_indicator = ctk.CTkFrame(
+            self.status_frame, fg_color="#2E7D32", width=8, height=8, corner_radius=4
+        )
+        self.status_indicator.pack(side="left", padx=(12, 8), pady=18)
+        self.status_indicator.pack_propagate(False)
+
+        self.status_label = ctk.CTkLabel(
+            self.status_frame,
+            text="Ready to work",
+            font=("Arial", 12),
+            text_color=WHITE_COLOR,
+        )
+        self.status_label.pack(side="left", pady=12)
 
         # create button
         self.buttons = {}
