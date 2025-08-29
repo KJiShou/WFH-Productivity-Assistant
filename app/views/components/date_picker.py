@@ -10,6 +10,7 @@ from app.utils.theme import WHITE_COLOR, BLACK_COLOR
 from app.controllers.task_manager_controller import DATE_FMT
 
 # ---------- helpers ----------
+# Utility functions for hex color validation and creating pill buttons
 _HEX6 = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
@@ -32,6 +33,7 @@ def _pill(master, text, bg, on_click=None):
 
 
 # ===================== Date Picker =====================
+# Popup calendar for date selection
 class _CalendarPopup(ctk.CTkToplevel):
     """Internal popup calendar used by DatePicker."""
 
@@ -130,6 +132,7 @@ class _CalendarPopup(ctk.CTkToplevel):
         self._build()
 
 
+# Date picker widget with calendar popup
 class DatePicker(ctk.CTkFrame):
     """Readonly field with a calendar popup to choose a date."""
 

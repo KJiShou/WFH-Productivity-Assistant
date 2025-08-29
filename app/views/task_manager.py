@@ -25,6 +25,7 @@ from app.views.components.calendar_card import CalendarCard
 from app.views.components.task_item import TaskItem
 
 
+# Main task management page with active tasks, projects, and calendar
 class TaskPage(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master, fg_color="transparent")
@@ -32,11 +33,11 @@ class TaskPage(ctk.CTkFrame):
         self.pm = ProjectManagerController("projects.json")
         self._selected_date: Optional[dt.date] = None
 
-        # layout
+        # Main page layout configuration
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # top bar with "+ Add New Task" (pill)
+        # Header section with date display and action buttons
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 6))
         ctk.CTkLabel(
@@ -74,14 +75,14 @@ class TaskPage(ctk.CTkFrame):
             command=self._open_add_task,
         ).pack(side="right", padx=(0, 16))
 
-        # main two columns
+        # Main content area - two column layout
         main = ctk.CTkFrame(self, fg_color="transparent")
         main.grid(row=1, column=0, sticky="nsew", padx=10, pady=(6, 8))
         main.grid_columnconfigure(0, weight=3)
         main.grid_columnconfigure(1, weight=2)
         main.grid_rowconfigure(0, weight=1)
 
-        # LEFT: Active Task + Projects
+        # Left column: Active tasks and project cards
         left = ctk.CTkFrame(main, fg_color="transparent")
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
         left.grid_rowconfigure(0, weight=1)
@@ -103,10 +104,12 @@ class TaskPage(ctk.CTkFrame):
         ctk.CTkLabel(proj_wrap, text="Project", font=("Inter", 14, "bold")).pack(
             anchor="w", padx=4, pady=(0, 6)
         )
-        self.proj_cards = ctk.CTkFrame(proj_wrap, fg_color="#4B4B4B", corner_radius=18)
+        self.proj_cards = ctk.CTkScrollableFrame(
+            proj_wrap, fg_color="#4B4B4B", corner_radius=18, height=200
+        )
         self.proj_cards.pack(fill="x")
 
-        # RIGHT: Planned + Calendar
+        # Right column: Planned tasks summary and calendar widget
         right = ctk.CTkFrame(main, fg_color="transparent")
         right.grid(row=0, column=1, sticky="nsew", padx=(8, 0))
         self._build_planned(right)
@@ -114,7 +117,7 @@ class TaskPage(ctk.CTkFrame):
         self.calendar.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
         right.grid_rowconfigure(1, weight=1)
 
-        # context menu (Edit/Delete/Timer)
+        # Right-click context menu for task operations
         self.menu = tk.Menu(self, tearoff=False)
         self.menu.add_command(
             label="Edit", command=self._menu_edit, font=("Inter", 10, "bold")
@@ -168,7 +171,7 @@ class TaskPage(ctk.CTkFrame):
             self.timer_window.destroy()
             self.timer_window = None
 
-    # ---------- top actions ----------
+    # ---------- Task creation handlers ----------
     def _open_add_task(self):
         names = [p.name for p in self.pm.list_projects()]
         AddTaskDialog(
@@ -184,7 +187,7 @@ class TaskPage(ctk.CTkFrame):
         self.tm.add_task(**payload)
         self._reload_and_render()
 
-    # ---------- project edit handlers ----------
+    # ---------- Project management handlers ----------
     def _open_edit_project_by_name(self, name: str):
         proj = next((p for p in self.pm.list_projects() if p.name == name), None)
         if not proj:
@@ -221,7 +224,7 @@ class TaskPage(ctk.CTkFrame):
         self.pm.add_project(name, color)
         self._reload_and_render()
 
-    # ---------- context menu ----------
+    # ---------- Task context menu operations ----------
     def _open_context_menu(self, task: Task):
         self._menu_task = task
         try:
@@ -248,13 +251,13 @@ class TaskPage(ctk.CTkFrame):
         self._menu_task = None
         self._reload_and_render()
 
-    # ---------- calendar ----------
+    # ---------- Calendar date selection ----------
     def _on_date_selected(self, day: Optional[dt.date]):
         # Enhanced: Handle None to clear filter when date is deselected
         self._selected_date = day
         self._reload_and_render()
 
-    # ---------- planned block ----------
+    # ---------- Planned tasks summary widget ----------
     def _build_planned(self, parent):
         panel = ctk.CTkFrame(parent, corner_radius=18, fg_color="#4B4B4B")
         panel.grid(row=0, column=0, sticky="ew")
@@ -273,7 +276,7 @@ class TaskPage(ctk.CTkFrame):
         self.l_week = ctk.CTkLabel(block, text="Due This Week  0", font=("Inter", 13))
         self.l_week.pack(anchor="w")
 
-    # ---------- render ----------
+    # ---------- Data loading and UI rendering ----------
     def _reload_and_render(self):
         # clear list & cards
         for w in self.task_list.winfo_children():

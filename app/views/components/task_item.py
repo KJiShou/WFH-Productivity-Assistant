@@ -6,6 +6,7 @@ from app.utils.theme import WHITE_COLOR, SELECT_BOX_COLOR
 from app.views.components.date_picker import _hex, _pill
 
 
+# Individual task display widget with checkbox, title, and project pill
 class TaskItem(ctk.CTkFrame):
     def __init__(
         self,

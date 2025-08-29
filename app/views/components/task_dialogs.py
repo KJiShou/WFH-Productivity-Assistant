@@ -7,6 +7,7 @@ from app.controllers.task_manager_controller import Task
 from app.views.components.date_picker import DatePicker
 
 
+# Base dialog class with common task form fields
 class BaseTaskDialog(ctk.CTkToplevel):
     def __init__(self, master, title: str):
         super().__init__(master)
@@ -78,6 +79,7 @@ class BaseTaskDialog(ctk.CTkToplevel):
         pass
 
 
+# Dialog for creating new tasks
 class AddTaskDialog(BaseTaskDialog):
     def __init__(
         self,
@@ -101,6 +103,7 @@ class AddTaskDialog(BaseTaskDialog):
         self.destroy()
 
 
+# Dialog for editing existing tasks
 class EditTaskDialog(BaseTaskDialog):
     def __init__(self, master, task: Task, on_done, project_names: list[str]):
         super().__init__(master, "Edit Task")

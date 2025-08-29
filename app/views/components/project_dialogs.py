@@ -7,6 +7,7 @@ from app.controllers.project_manager_controller import Project
 from app.views.components.date_picker import _hex
 
 
+# Dialog for creating new projects
 class AddProjectDialog(ctk.CTkToplevel):
     def __init__(self, master, on_done):
         super().__init__(master)
@@ -42,6 +43,7 @@ class AddProjectDialog(ctk.CTkToplevel):
         ).pack(side="right", padx=(0, 16))
 
 
+# Dialog for editing or deleting existing projects
 class EditProjectDialog(ctk.CTkToplevel):
     def __init__(self, master, project: Project, on_save):
         super().__init__(master)

@@ -7,6 +7,7 @@ import customtkinter as ctk
 from app.utils.theme import WHITE_COLOR
 
 
+# Interactive calendar widget for date selection
 class CalendarCard(ctk.CTkFrame):
     def __init__(self, master, when: Optional[dt.date] = None, on_select=None):
         super().__init__(master, corner_radius=18, fg_color="#4B4B4B")
