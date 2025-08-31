@@ -264,11 +264,11 @@ class TimerPage(ctk.CTkFrame):
         if self.run_timer:
             return
 
-        if self.remaining_second == 0:
-            self.remaining_second = self.totalSec()
+        try:
+            minute, second = map(int, self.timeSet.cget("text").split(" : "))
+            self.remaining_second = minute * 60 + second
             self.totalTime = self.remaining_second
-
-        if self.remaining_second == 0 or self.remaining_second >= 3601:
+        except:
             return
 
         self.run_timer = True
