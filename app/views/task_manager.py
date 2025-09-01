@@ -1,8 +1,5 @@
-import calendar
 import datetime as dt
-import re
 import tkinter as tk
-import tkinter.messagebox as msgbox
 from typing import Optional
 
 import customtkinter as ctk
@@ -13,7 +10,6 @@ from app.utils.theme import (
     WHITE_COLOR,
     BLACK_COLOR,
     BUTTON_COLOR,
-    SELECT_BOX_COLOR,
 )
 from app.controllers.task_manager_controller import (
     TaskManagerController,
@@ -22,572 +18,14 @@ from app.controllers.task_manager_controller import (
 )
 from app.controllers.project_manager_controller import ProjectManagerController, Project
 from app.views.pomodoro_timer import TimerPage
+from app.views.components.date_picker import _hex
+from app.views.components.task_dialogs import AddTaskDialog, EditTaskDialog
+from app.views.components.project_dialogs import AddProjectDialog, EditProjectDialog
+from app.views.components.calendar_card import CalendarCard
+from app.views.components.task_item import TaskItem
 
-# ---------- helpers ----------
-_HEX6 = re.compile(r"^#[0-9a-fA-F]{6}$")
 
-
-def _hex(color: Optional[str]) -> Optional[str]:
-    return color if isinstance(color, str) and _HEX6.match(color.strip()) else None
-
-
-def _pill(master, text, bg, on_click=None):
-    btn = ctk.CTkButton(
-        master,
-        text=text,
-        height=26,
-        corner_radius=12,
-        fg_color=bg,
-        text_color=BLACK_COLOR,
-        hover_color=bg,
-        command=on_click if on_click else lambda: None,
-    )
-    return btn
-
-
-# ===================== Date Picker =====================
-class _CalendarPopup(ctk.CTkToplevel):
-    """Internal popup calendar used by DatePicker."""
-
-    def __init__(self, master, init_date: dt.date, on_pick):
-        super().__init__(master)
-        self.title("Choose date")
-        self.geometry("320x320")
-        self.resizable(False, False)
-        self.attributes("-topmost", True)
-        self.grab_set()
-
-        self._view = dt.date(init_date.year, init_date.month, 1)
-        self._on_pick = on_pick
-
-        self.grid_columnconfigure(0, weight=1)
-        self._build()
-
-    def _build(self):
-        for w in self.winfo_children():
-            w.destroy()
-
-        head = ctk.CTkFrame(self, fg_color="transparent")
-        head.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
-        ctk.CTkLabel(
-            head, text=self._view.strftime("%B, %Y"), font=("Inter", 14, "bold")
-        ).pack(side="left")
-
-        nav = ctk.CTkFrame(head, fg_color="transparent")
-        nav.pack(side="right")
-        ctk.CTkButton(
-            nav,
-            text="◀",
-            width=36,
-            fg_color="#3F3F3F",
-            text_color=WHITE_COLOR,
-            hover_color="#5D5D5D",
-            command=self._prev,
-        ).pack(side="left", padx=2)
-        ctk.CTkButton(
-            nav,
-            text="▶",
-            width=36,
-            fg_color="#3F3F3F",
-            text_color=WHITE_COLOR,
-            hover_color="#5D5D5D",
-            command=self._next,
-        ).pack(side="left", padx=2)
-
-        grid = ctk.CTkFrame(self, fg_color="#3F3F3F", corner_radius=12)
-        grid.grid(row=1, column=0, sticky="nsew", padx=8, pady=(4, 8))
-
-        for i, wd in enumerate(["M", "T", "W", "T", "F", "S", "S"]):
-            ctk.CTkLabel(
-                grid, text=wd, font=("Inter", 12, "bold"), text_color=WHITE_COLOR
-            ).grid(row=0, column=i, padx=6, pady=6)
-
-        cal = calendar.Calendar(firstweekday=0)
-        r = 1
-        today = dt.date.today()
-        for week in cal.monthdatescalendar(self._view.year, self._view.month):
-            for c, d in enumerate(week):
-                cmd_date = d
-                btn = ctk.CTkButton(
-                    grid,
-                    text=str(d.day),
-                    width=36,
-                    height=28,
-                    fg_color="#2F2F2F" if d.month != self._view.month else "#2A2A2A",
-                    text_color=(
-                        WHITE_COLOR if d.month == self._view.month else "#BDBDBD"
-                    ),
-                    hover_color="#4D4D4D",
-                    command=lambda dd=cmd_date: self._pick(dd),
-                )
-                if d == today:
-                    btn.configure(border_width=2, border_color=WHITE_COLOR)
-                btn.grid(row=r, column=c, padx=4, pady=4)
-            r += 1
-
-    def _pick(self, date_: dt.date):
-        self._on_pick(date_)
-        self.destroy()
-
-    def _prev(self):
-        y, m = self._view.year, self._view.month
-        m = 12 if m == 1 else m - 1
-        y = y - 1 if m == 12 else y
-        self._view = dt.date(y, m, 1)
-        self._build()
-
-    def _next(self):
-        y, m = self._view.year, self._view.month
-        m = 1 if m == 12 else m + 1
-        y = y + 1 if m == 1 else y
-        self._view = dt.date(y, m, 1)
-        self._build()
-
-
-class DatePicker(ctk.CTkFrame):
-    """Readonly field with a calendar popup to choose a date."""
-
-    def __init__(self, master, initial: Optional[dt.date] = None):
-        super().__init__(master, fg_color="transparent")
-        self._date: Optional[dt.date] = initial
-        self._var = tk.StringVar(value=self._fmt(self._date))
-
-        self.entry = ctk.CTkEntry(self, textvariable=self._var, state="readonly")
-        self.entry.pack(side="left", fill="x", expand=True)
-
-        ctk.CTkButton(
-            self,
-            text="📅",
-            width=40,
-            height=30,
-            corner_radius=8,
-            fg_color="#3F3F3F",
-            text_color=WHITE_COLOR,
-            hover_color="#5D5D5D",
-            command=self._open,
-        ).pack(side="left", padx=(8, 0))
-
-    def _fmt(self, d: Optional[dt.date]) -> str:
-        return d.strftime(DATE_FMT) if d else ""
-
-    def _open(self):
-        base = self._date or dt.date.today()
-        _CalendarPopup(self, base, on_pick=self.set_date)
-
-    def set_date(self, d: dt.date):
-        self._date = d
-        self._var.set(self._fmt(self._date))
-
-    def set_from_str(self, s: Optional[str]):
-        if not s:
-            self._date = None
-            self._var.set("")
-            return
-        try:
-            self.set_date(dt.datetime.strptime(s, DATE_FMT).date())
-        except ValueError:
-            self._date = None
-            self._var.set("")
-
-    def get_date(self) -> Optional[dt.date]:
-        return self._date
-
-    def get_date_str(self) -> Optional[str]:
-        return self._fmt(self._date) or None
-
-
-# ------------------ Add / Edit dialogs ------------------
-class BaseTaskDialog(ctk.CTkToplevel):
-    def __init__(self, master, title: str):
-        super().__init__(master)
-        self.title(title)
-        self.geometry("520x480")
-        self.resizable(False, False)
-        self.grab_set()
-        self.focus_force()
-        self.grid_columnconfigure(1, weight=1)
-
-        ctk.CTkLabel(self, text="Title").grid(
-            row=0, column=0, padx=10, pady=(16, 8), sticky="w"
-        )
-        self.e_title = ctk.CTkEntry(self)
-        self.e_title.grid(row=0, column=1, padx=10, pady=(16, 8), sticky="ew")
-
-        ctk.CTkLabel(self, text="Description").grid(
-            row=1, column=0, padx=10, pady=8, sticky="w"
-        )
-        self.e_desc = ctk.CTkTextbox(self, height=110)
-        self.e_desc.grid(row=1, column=1, padx=10, pady=8, sticky="nsew")
-
-        ctk.CTkLabel(self, text="Project").grid(
-            row=2, column=0, padx=10, pady=8, sticky="w"
-        )
-        self.c_project = ctk.CTkOptionMenu(self, values=["(None)"])
-        self.c_project.grid(row=2, column=1, padx=10, pady=8, sticky="w")
-
-        ctk.CTkLabel(self, text="Due date").grid(
-            row=3, column=0, padx=10, pady=8, sticky="w"
-        )
-        # >>> replace Entry with DatePicker
-        self.dp_due = DatePicker(self)
-        self.dp_due.grid(row=3, column=1, padx=10, pady=8, sticky="ew")
-
-        ctk.CTkLabel(self, text="Status").grid(
-            row=4, column=0, padx=10, pady=8, sticky="w"
-        )
-        self.c_status = ctk.CTkOptionMenu(self, values=["todo", "doing", "done"])
-        self.c_status.grid(row=4, column=1, padx=10, pady=8, sticky="w")
-
-        bar = ctk.CTkFrame(self, fg_color="transparent")
-        bar.grid(row=5, column=0, columnspan=2, sticky="e", padx=10, pady=14)
-
-        # Fixed: Added proper spacing between Cancel and Save buttons
-        ctk.CTkButton(bar, text="Cancel", command=self.destroy).pack(side="right")
-        self.ok_btn = ctk.CTkButton(bar, text="Save", command=self._save)
-        self.ok_btn.pack(side="right", padx=(0, 16))  # Added 16px gap between buttons
-
-    def set_projects(self, names: list[str], preselect: Optional[str] = None):
-        values = ["(None)"] + names
-        self.c_project.configure(values=values)
-        if preselect and preselect in names:
-            self.c_project.set(preselect)
-        else:
-            self.c_project.set(values[0])
-
-    def _values(self):
-        proj = self.c_project.get()
-        if proj == "(None)":
-            proj = None
-        return dict(
-            title=self.e_title.get().strip(),
-            description=self.e_desc.get("1.0", "end").strip(),
-            project=proj,
-            due_date=self.dp_due.get_date_str(),  # <- from date picker
-            status=self.c_status.get(),
-        )
-
-    def _save(self):  # override
-        pass
-
-
-class AddTaskDialog(BaseTaskDialog):
-    def __init__(
-        self,
-        master,
-        on_done,
-        project_names: list[str],
-        preset_date: Optional[dt.date] = None,
-    ):
-        super().__init__(master, "Add Task")
-        self.on_done = on_done
-        self.c_status.set("todo")
-        self.set_projects(project_names)
-        if preset_date:
-            self.dp_due.set_date(preset_date)
-
-    def _save(self):
-        payload = self._values()
-        if not payload["title"]:
-            return
-        self.on_done(payload)
-        self.destroy()
-
-
-class EditTaskDialog(BaseTaskDialog):
-    def __init__(self, master, task: Task, on_done, project_names: list[str]):
-        super().__init__(master, "Edit Task")
-        self.task = task
-        self.on_done = on_done
-        self.e_title.insert(0, task.title)
-        self.e_desc.insert("1.0", task.description or "")
-        self.set_projects(project_names, preselect=task.project or None)
-        self.dp_due.set_from_str(task.due_date)
-        self.c_status.set(task.status)
-
-    def _save(self):
-        self.on_done(self.task.id, self._values())
-        self.destroy()
-
-
-# ------------------ Add Project dialog ------------------
-class AddProjectDialog(ctk.CTkToplevel):
-    def __init__(self, master, on_done):
-        super().__init__(master)
-        self.title("Add Project")
-        self.geometry("420x250")
-        self.resizable(False, False)
-        self.grab_set()
-        self.focus_force()
-
-        ctk.CTkLabel(self, text="Project Name").pack(anchor="w", padx=12, pady=(14, 6))
-        self.e_name = ctk.CTkEntry(self)
-        self.e_name.pack(fill="x", padx=12)
-
-        ctk.CTkLabel(self, text="Color (optional, e.g. #F7B4BB)").pack(
-            anchor="w", padx=12, pady=(10, 6)
-        )
-        self.e_color = ctk.CTkEntry(self)
-        self.e_color.pack(fill="x", padx=12)
-
-        bar = ctk.CTkFrame(self, fg_color="transparent")
-        bar.pack(fill="x", padx=12, pady=12)
-
-        # Fixed: Added proper spacing between Cancel and Save buttons
-        ctk.CTkButton(bar, text="Cancel", command=self.destroy).pack(side="right")
-        ctk.CTkButton(
-            bar,
-            text="Save",
-            command=lambda: (
-                on_done(
-                    self.e_name.get().strip() or "", self.e_color.get().strip() or None
-                ),
-                self.destroy(),
-            ),
-        ).pack(
-            side="right", padx=(0, 16)
-        )  # Added 16px gap between buttons
-
-
-# ------------------ Calendar with white nav arrows (sidebar) ------------------
-class CalendarCard(ctk.CTkFrame):
-    def __init__(self, master, when: Optional[dt.date] = None, on_select=None):
-        super().__init__(master, corner_radius=18, fg_color="#4B4B4B")
-        self.when = when or dt.date.today()
-        self.on_select = on_select
-        self.selected: Optional[dt.date] = None
-        self.grid_columnconfigure(0, weight=1)
-        self._build()
-
-    def _build(self):
-        for w in self.winfo_children():
-            w.destroy()
-
-        head = ctk.CTkFrame(self, fg_color="transparent")
-        head.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 6))
-        ctk.CTkLabel(
-            head, text=self.when.strftime("%B, %Y"), font=("Inter", 14, "bold")
-        ).pack(side="left")
-
-        nav = ctk.CTkFrame(head, fg_color="transparent")
-        nav.pack(side="right")
-        ctk.CTkButton(
-            nav,
-            text="◀",
-            width=36,
-            fg_color="#3F3F3F",
-            text_color=WHITE_COLOR,
-            hover_color="#5D5D5D",
-            command=self._prev,
-        ).pack(side="left", padx=2)
-        ctk.CTkButton(
-            nav,
-            text="▶",
-            width=36,
-            fg_color="#3F3F3F",
-            text_color=WHITE_COLOR,
-            hover_color="#5D5D5D",
-            command=self._next,
-        ).pack(side="left", padx=2)
-
-        grid = ctk.CTkFrame(self, fg_color="#3F3F3F", corner_radius=12)
-        grid.grid(row=1, column=0, sticky="nsew", padx=10, pady=(4, 10))
-
-        for i, wd in enumerate(["M", "T", "W", "T", "F", "S", "S"]):
-            ctk.CTkLabel(
-                grid, text=wd, font=("Inter", 12, "bold"), text_color=WHITE_COLOR
-            ).grid(row=0, column=i, padx=6, pady=6)
-
-        cal = calendar.Calendar(firstweekday=0)
-        r = 1
-        for week in cal.monthdatescalendar(self.when.year, self.when.month):
-            for c, d in enumerate(week):
-                cmd_date = d
-                btn = ctk.CTkButton(
-                    grid,
-                    text=str(d.day),
-                    width=36,
-                    height=28,
-                    fg_color="#2F2F2F" if d.month != self.when.month else "#2A2A2A",
-                    text_color=WHITE_COLOR if d.month == self.when.month else "#BDBDBD",
-                    hover_color="#4D4D4D",
-                    command=lambda dd=cmd_date: self._select(dd),
-                )
-                if self.selected and d == self.selected:
-                    btn.configure(border_width=2, border_color=WHITE_COLOR)
-                btn.grid(row=r, column=c, padx=4, pady=4)
-            r += 1
-
-    def _select(self, day: dt.date):
-        # Enhanced: Toggle functionality - clicking the same date deselects it
-        if self.selected == day:
-            self.selected = None
-            if self.on_select:
-                self.on_select(None)  # Pass None to clear filter
-        else:
-            self.selected = day
-            if self.on_select:
-                self.on_select(day)
-        self._build()
-
-    def _prev(self):
-        y, m = self.when.year, self.when.month
-        m = 12 if m == 1 else m - 1
-        y = y - 1 if m == 12 else y
-        self.when = dt.date(y, m, 1)
-        self._build()
-
-    def _next(self):
-        y, m = self.when.year, self.when.month
-        m = 1 if m == 12 else m + 1
-        y = y + 1 if m == 1 else y
-        self.when = dt.date(y, m, 1)
-        self._build()
-
-
-# ------------------ Edit Project dialog ------------------
-class EditProjectDialog(ctk.CTkToplevel):
-    def __init__(self, master, project: Project, on_save):
-        super().__init__(master)
-        self.title(f"Edit Project")
-        self.geometry("420x200")
-        self.resizable(False, False)
-        self.grab_set()
-        self.focus_force()
-        self.proj = project
-        self.on_save = on_save
-
-        ctk.CTkLabel(self, text="Project Name").pack(anchor="w", padx=12, pady=(14, 6))
-        self.e_name = ctk.CTkEntry(self)
-        self.e_name.pack(fill="x", padx=12)
-        self.e_name.insert(0, project.name)
-
-        ctk.CTkLabel(self, text="Color (#RRGGBB)").pack(
-            anchor="w", padx=12, pady=(10, 6)
-        )
-        self.e_color = ctk.CTkEntry(self)
-        self.e_color.pack(fill="x", padx=12)
-        self.e_color.insert(0, project.color or "")
-
-        bar = ctk.CTkFrame(self, fg_color="transparent")
-        bar.pack(fill="x", padx=12, pady=12)
-
-        ctk.CTkButton(
-            bar, text="Delete", command=self._delete_project, fg_color="red"
-        ).pack(side="right")
-        ctk.CTkButton(bar, text="Cancel", command=self.destroy).pack(
-            side="right", padx=(0, 16)
-        )
-        ctk.CTkButton(bar, text="Save", command=self._save).pack(
-            side="right", padx=(0, 16)
-        )
-
-    def _save(self):
-        name = self.e_name.get().strip()
-        color = _hex(self.e_color.get().strip() or None)
-        if not name:
-            return
-        self.on_save(self.proj, name, color)
-        self.destroy()
-
-    def _delete_project(self):
-        # Confirm deletion
-        if msgbox.askyesno(
-            "Delete Project",
-            f"Are you sure you want to delete '{self.proj.name}'?\n\nThis action cannot be undone.",
-        ):
-            self.on_save(self.proj, None, None)  # Signal deletion with None values
-            self.destroy()
-
-
-# ------------------ Task row (toggle + flat title + right-side chips) ------------------
-class TaskItem(ctk.CTkFrame):
-    def __init__(
-        self,
-        master,
-        task: Task,
-        proj_lookup: dict[str, Project],
-        on_toggle,
-        on_open_menu,
-        on_edit_project,
-    ):
-        super().__init__(master, fg_color="transparent")
-        self.task = task
-        self._proj_lookup = proj_lookup
-        self.on_toggle = on_toggle
-        self.on_open_menu = on_open_menu
-        self.on_edit_project = on_edit_project
-
-        # left toggle (✓ when done)
-        self.toggle = ctk.CTkButton(
-            self,
-            text="",
-            width=26,
-            height=26,
-            corner_radius=13,
-            fg_color="#2B2B2B",
-            text_color=WHITE_COLOR,
-            hover_color="#4A4A4A",
-            command=self._toggle_click,
-        )
-        self.toggle.pack(side="left", padx=(10, 12), pady=6)
-
-        # title (flat + hover bold)
-        self.btn = ctk.CTkButton(
-            self,
-            text=self.task.title,
-            fg_color="transparent",
-            hover=False,
-            text_color=WHITE_COLOR,
-            anchor="w",
-            font=("Inter", 13, "normal"),
-            command=lambda: self.on_open_menu(self.task),
-        )
-        self.btn.pack(side="left", fill="x", expand=True, pady=4)
-        self.btn.bind(
-            "<Enter>", lambda e: self.btn.configure(font=("Inter", 13, "bold"))
-        )
-        self.btn.bind(
-            "<Leave>", lambda e: self.btn.configure(font=("Inter", 13, "normal"))
-        )
-
-        # right side: project pill + date
-        right = ctk.CTkFrame(self, fg_color="transparent")
-        right.pack(side="right", padx=8)
-        # project pill (click to edit project)
-        if self.task.project:
-            p = self._proj_lookup.get(self.task.project)
-            color = _hex(p.color) if p else None
-            pill_bg = color or SELECT_BOX_COLOR
-            _pill(
-                right,
-                self.task.project,
-                pill_bg,
-                on_click=lambda: self.on_edit_project(self.task.project),
-            ).pack(side="left", padx=(0, 16))
-        # date
-        ctk.CTkLabel(
-            right,
-            text=self.task.due_date or "",
-            font=("Inter", 13, "bold"),
-            text_color=WHITE_COLOR,
-        ).pack(side="left")
-
-        self._style_toggle()
-
-    def _style_toggle(self):
-        if self.task.status == "done":
-            self.toggle.configure(fg_color="#2E7D32", text="✓")
-        else:
-            self.toggle.configure(fg_color="#2B2B2B", text="")
-
-    def _toggle_click(self):
-        new_status = "done" if self.task.status != "done" else "doing"
-        self.task.status = new_status
-        self._style_toggle()
-        self.on_toggle(self.task.id, new_status)
-
-
-# ------------------ Main Page ------------------
+# Main task management page with active tasks, projects, and calendar
 class TaskPage(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master, fg_color="transparent")
@@ -595,11 +33,11 @@ class TaskPage(ctk.CTkFrame):
         self.pm = ProjectManagerController("projects.json")
         self._selected_date: Optional[dt.date] = None
 
-        # layout
+        # Main page layout configuration
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # top bar with "+ Add New Task" (pill)
+        # Header section with date display and action buttons
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 6))
         ctk.CTkLabel(
@@ -637,14 +75,14 @@ class TaskPage(ctk.CTkFrame):
             command=self._open_add_task,
         ).pack(side="right", padx=(0, 16))
 
-        # main two columns
+        # Main content area - two column layout
         main = ctk.CTkFrame(self, fg_color="transparent")
         main.grid(row=1, column=0, sticky="nsew", padx=10, pady=(6, 8))
         main.grid_columnconfigure(0, weight=3)
         main.grid_columnconfigure(1, weight=2)
         main.grid_rowconfigure(0, weight=1)
 
-        # LEFT: Active Task + Projects
+        # Left column: Active tasks and project cards
         left = ctk.CTkFrame(main, fg_color="transparent")
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
         left.grid_rowconfigure(0, weight=1)
@@ -666,10 +104,12 @@ class TaskPage(ctk.CTkFrame):
         ctk.CTkLabel(proj_wrap, text="Project", font=("Inter", 14, "bold")).pack(
             anchor="w", padx=4, pady=(0, 6)
         )
-        self.proj_cards = ctk.CTkFrame(proj_wrap, fg_color="#4B4B4B", corner_radius=18)
+        self.proj_cards = ctk.CTkScrollableFrame(
+            proj_wrap, fg_color="#4B4B4B", corner_radius=18, height=200
+        )
         self.proj_cards.pack(fill="x")
 
-        # RIGHT: Planned + Calendar
+        # Right column: Planned tasks summary and calendar widget
         right = ctk.CTkFrame(main, fg_color="transparent")
         right.grid(row=0, column=1, sticky="nsew", padx=(8, 0))
         self._build_planned(right)
@@ -677,7 +117,7 @@ class TaskPage(ctk.CTkFrame):
         self.calendar.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
         right.grid_rowconfigure(1, weight=1)
 
-        # context menu (Edit/Delete/Timer)
+        # Right-click context menu for task operations
         self.menu = tk.Menu(self, tearoff=False)
         self.menu.add_command(
             label="Edit", command=self._menu_edit, font=("Inter", 10, "bold")
@@ -731,7 +171,7 @@ class TaskPage(ctk.CTkFrame):
             self.timer_window.destroy()
             self.timer_window = None
 
-    # ---------- top actions ----------
+    # ---------- Task creation handlers ----------
     def _open_add_task(self):
         names = [p.name for p in self.pm.list_projects()]
         AddTaskDialog(
@@ -747,7 +187,7 @@ class TaskPage(ctk.CTkFrame):
         self.tm.add_task(**payload)
         self._reload_and_render()
 
-    # ---------- project edit handlers ----------
+    # ---------- Project management handlers ----------
     def _open_edit_project_by_name(self, name: str):
         proj = next((p for p in self.pm.list_projects() if p.name == name), None)
         if not proj:
@@ -784,7 +224,7 @@ class TaskPage(ctk.CTkFrame):
         self.pm.add_project(name, color)
         self._reload_and_render()
 
-    # ---------- context menu ----------
+    # ---------- Task context menu operations ----------
     def _open_context_menu(self, task: Task):
         self._menu_task = task
         try:
@@ -811,13 +251,13 @@ class TaskPage(ctk.CTkFrame):
         self._menu_task = None
         self._reload_and_render()
 
-    # ---------- calendar ----------
+    # ---------- Calendar date selection ----------
     def _on_date_selected(self, day: Optional[dt.date]):
         # Enhanced: Handle None to clear filter when date is deselected
         self._selected_date = day
         self._reload_and_render()
 
-    # ---------- planned block ----------
+    # ---------- Planned tasks summary widget ----------
     def _build_planned(self, parent):
         panel = ctk.CTkFrame(parent, corner_radius=18, fg_color="#4B4B4B")
         panel.grid(row=0, column=0, sticky="ew")
@@ -836,7 +276,7 @@ class TaskPage(ctk.CTkFrame):
         self.l_week = ctk.CTkLabel(block, text="Due This Week  0", font=("Inter", 13))
         self.l_week.pack(anchor="w")
 
-    # ---------- render ----------
+    # ---------- Data loading and UI rendering ----------
     def _reload_and_render(self):
         # clear list & cards
         for w in self.task_list.winfo_children():
@@ -862,7 +302,7 @@ class TaskPage(ctk.CTkFrame):
             "Last 7 days": [],
             "Today": [],
             "This Week": [],
-            "Completed": [],  # completed (today)
+            "Completed": [],  # completed (last 7 days + today)
         }
 
         for t in tasks:
@@ -870,7 +310,8 @@ class TaskPage(ctk.CTkFrame):
                 if t.due_date:
                     try:
                         d = dt.datetime.strptime(t.due_date, DATE_FMT).date()
-                        if d == today:
+                        # Include completed tasks from last 7 days and today
+                        if last7_start <= d <= today:
                             groups["Completed"].append(t)
                     except ValueError:
                         pass
