@@ -44,29 +44,29 @@ class SchedulePage(ctk.CTkFrame):
         button_frame = ctk.CTkFrame(background, fg_color="transparent")
         button_frame.grid(row=1, column=0, pady=5)
 
-        day_button = ctk.CTkButton(
+        self.day_button = ctk.CTkButton(
             button_frame, text="Day",
             fg_color="transparent", hover_color="white",
             font=("Times New Roman", 20, "bold"),
             command=lambda: self.show_view("day")
         )
-        day_button.grid(row=0, column=0, padx=20)
+        self.day_button.grid(row=0, column=0, padx=20)
 
-        week_button = ctk.CTkButton(
+        self.week_button = ctk.CTkButton(
             button_frame, text="Week",
             fg_color="transparent", hover_color="white",
             font=("Times New Roman", 20, "bold"),
             command=lambda: self.show_view("week")
         )
-        week_button.grid(row=0, column=1, padx=20)
+        self.week_button.grid(row=0, column=1, padx=20)
 
-        month_button = ctk.CTkButton(
+        self.month_button = ctk.CTkButton(
             button_frame, text="Month",
             fg_color="transparent", hover_color="white",
             font=("Times New Roman", 20, "bold"),
             command=lambda: self.show_view("month")
         )
-        month_button.grid(row=0, column=2, padx=20)
+        self.month_button.grid(row=0, column=2, padx=20)
 
         self.display_frame = ctk.CTkFrame(
             background,
@@ -80,7 +80,7 @@ class SchedulePage(ctk.CTkFrame):
         self.display_frame.grid_columnconfigure(1, weight=0)
         self.display_frame.grid_columnconfigure(2, weight=1)
 
-        prev_btn = ctk.CTkButton(
+        prev_button = ctk.CTkButton(
             self.display_frame, text="<",
             fg_color="transparent",
             width=30,
@@ -90,9 +90,9 @@ class SchedulePage(ctk.CTkFrame):
             corner_radius=0,
             font=("Times New Roman", 20, "bold"),
             text_color="black",
-            command=self.prev_day
+            command=self.prev_button
         )
-        prev_btn.grid(row=0, column=0, sticky="w",)
+        prev_button.grid(row=0, column=0, sticky="w",)
 
         self.display_date_var = ctk.StringVar()
         self.display_date_var.set(datetime.now().strftime("%Y-%m-%d"))
@@ -105,7 +105,7 @@ class SchedulePage(ctk.CTkFrame):
         )
         self.display_label.grid(row=0, column=1)
 
-        next_btn = ctk.CTkButton(
+        next_button = ctk.CTkButton(
             self.display_frame, text=">",
             fg_color="transparent",
             width=30,
@@ -115,9 +115,9 @@ class SchedulePage(ctk.CTkFrame):
             corner_radius=0,
             font=("Times New Roman", 20, "bold"),
             text_color="black",
-            command=self.next_day
+            command=self.next_button
         )
-        next_btn.grid(row=0, column=2, sticky="e")
+        next_button.grid(row=0, column=2, sticky="e")
 
         self.view_container = ctk.CTkFrame(background, fg_color="transparent")
         self.view_container.grid(row=3, column=0, sticky="nsew", padx=10, pady=10)
@@ -131,7 +131,7 @@ class SchedulePage(ctk.CTkFrame):
         self.current_view = None
         self.show_view("day")
 
-    def prev_day(self):
+    def prev_button(self):
         current = datetime.strptime(self.display_date_var.get(), "%Y-%m-%d")
         new_date = current - timedelta(days=1)
         self.display_date_var.set(new_date.strftime("%Y-%m-%d"))
@@ -142,9 +142,11 @@ class SchedulePage(ctk.CTkFrame):
             week_start = new_date - timedelta(days=new_date.weekday())
             self.build_week_view(week_start)
         elif self.current_view == self.month_frame:
+            new_date = (current.replace(day=1) - timedelta(days=1)).replace(day=1)
+            self.display_date_var.set(new_date.strftime("%Y-%m-%d"))
             self.build_month_view()
 
-    def next_day(self):
+    def next_button(self):
         current = datetime.strptime(self.display_date_var.get(), "%Y-%m-%d")
         new_date = current + timedelta(days=1)
         self.display_date_var.set(new_date.strftime("%Y-%m-%d"))
@@ -155,73 +157,34 @@ class SchedulePage(ctk.CTkFrame):
             week_start = new_date - timedelta(days=new_date.weekday())
             self.build_week_view(week_start)
         elif self.current_view == self.month_frame:
+            next_month = current.replace(day=28) + timedelta(days=4)  # 一定跳到下个月
+            new_date = next_month.replace(day=1)
+            self.display_date_var.set(new_date.strftime("%Y-%m-%d"))
             self.build_month_view()
 
     def show_view(self, view_name: str):
         if self.current_view:
             self.current_view.grid_forget()
 
+        self.day_button.configure(fg_color="transparent", text_color="white")
+        self.week_button.configure(fg_color="transparent", text_color="white")
+        self.month_button.configure(fg_color="transparent", text_color="white")
+
         if view_name == "day":
             self.day_frame.grid(row=0, column=0, sticky="nsew")
             self.current_view = self.day_frame
+            self.day_button.configure(fg_color="white", text_color="black")
             self.build_day_view()
         elif view_name == "week":
             self.week_frame.grid(row=0, column=0, sticky="nsew")
             self.current_view = self.week_frame
+            self.week_button.configure(fg_color="white", text_color="black")
             self.build_week_view()
         elif view_name == "month":
             self.month_frame.grid(row=0, column=0, sticky="nsew")
             self.current_view = self.month_frame
+            self.month_button.configure(fg_color="white", text_color="black")
             self.build_month_view()
-
-    def save_events(self):
-        with open(self.data_file, "w", encoding="utf-8") as f:
-            json.dump(self.events, f, ensure_ascii=False, indent=2)
-
-    def load_events(self):
-        if os.path.exists(self.data_file):
-            with open(self.data_file, "r", encoding="utf-8") as f:
-                self.events = json.load(f)
-        else:
-            self.events = {}
-
-
-    def add_event(self, hour, date_key=None):
-        popup = ctk.CTkToplevel(self)
-        popup.title("Add Event")
-        popup.geometry("500x400")
-        popup.attributes("-topmost", True)
-
-        ctk.CTkLabel(popup, text="Title:").pack(pady=5)
-        title_entry = ctk.CTkEntry(popup, width=250)
-        title_entry.pack(pady=5)
-
-        ctk.CTkLabel(popup, text="Description:").pack(pady=5)
-        desc_entry = ctk.CTkTextbox(popup, width=250, height=60)
-        desc_entry.pack(pady=5)
-
-        if not date_key:
-            date_key = self.display_date_var.get()
-
-        def save():
-            title = title_entry.get()
-            desc = desc_entry.get("1.0", "end").strip()
-            if not title:
-               popup.destroy()
-               return
-
-            event_data = {"date": date_key, "hour": hour, "title": title, "desc": desc}
-            self.events.setdefault(date_key, []).append(event_data)
-            self.save_events()
-            popup.destroy()
-
-            if self.current_view == self.day_frame:
-                self.build_day_view()
-            elif self.current_view == self.week_frame:
-                current_date = datetime.strptime(self.display_date_var.get(), "%Y-%m-%d")
-                week_start = current_date - timedelta(days=current_date.weekday())
-                self.build_week_view(week_start)
-        ctk.CTkButton(popup, text="Save", command=save).pack(pady=10)
 
     def build_day_view(self):
         for widget in self.day_frame.winfo_children():
@@ -240,7 +203,7 @@ class SchedulePage(ctk.CTkFrame):
                 timeline,
                 text=f"{hour:02d}:00",
                 font=("Times New Roman", 12),
-                text_color="grey",
+                text_color="white",
                 width=80
             ).grid(row=hour, column=0, sticky="nsew", padx=5, pady=2)
 
@@ -279,7 +242,7 @@ class SchedulePage(ctk.CTkFrame):
                     text_color="black"
                 )
                 label.pack(fill="both", expand=True, padx=2, pady=2)
-                label.bind("<Button-1>", lambda e, ev=ev: self.show_detail(ev))
+                label.bind("<Button-1>", lambda e, event=ev: self.show_detail(event))
 
     def build_week_view(self, week_start_date=None):
         self.week_frame.grid_rowconfigure(0, weight=0)
@@ -370,9 +333,10 @@ class SchedulePage(ctk.CTkFrame):
                         cell = self.week_slots[date_key][hour]
                         lbl = ctk.CTkLabel(cell, text=ev["title"], fg_color="lightblue", text_color="black")
                         lbl.pack(fill="both", expand=True, padx=1, pady=1)
-                        lbl.bind("<Button-1>", lambda e, ev=ev: self.show_detail(ev))
+                        lbl.bind("<Button-1>", lambda e, event=ev: self.show_detail(event))
 
     def build_month_view(self):
+        self.month_slots.clear()
         for widget in self.month_frame.winfo_children():
             widget.destroy()
 
@@ -480,6 +444,56 @@ class SchedulePage(ctk.CTkFrame):
     def show_day_from_month(self, date_str: str):
         self.display_date_var.set(date_str)
         self.show_view("day")
+
+    def save_events(self):
+        with open(self.data_file, "w", encoding="utf-8") as f:
+            json.dump(self.events, f, ensure_ascii=False, indent=2)
+
+    def load_events(self):
+        if os.path.exists(self.data_file):
+            with open(self.data_file, "r", encoding="utf-8") as f:
+                self.events = json.load(f)
+        else:
+            self.events = {}
+
+
+    def add_event(self, hour, date_key=None):
+        popup = ctk.CTkToplevel(self)
+        popup.title("Add Event")
+        popup.geometry("500x400")
+        popup.attributes("-topmost", True)
+
+        ctk.CTkLabel(popup, text="Title:").pack(pady=5)
+        title_entry = ctk.CTkEntry(popup, width=250)
+        title_entry.pack(pady=5)
+
+        ctk.CTkLabel(popup, text="Description:").pack(pady=5)
+        desc_entry = ctk.CTkTextbox(popup, width=250, height=60)
+        desc_entry.pack(pady=5)
+
+        if not date_key:
+            date_key = self.display_date_var.get()
+
+        def save():
+            title = title_entry.get()
+            desc = desc_entry.get("1.0", "end").strip()
+            if not title:
+               popup.destroy()
+               return
+
+            event_data = {"date": date_key, "hour": hour, "title": title, "desc": desc}
+            self.events.setdefault(date_key, []).append(event_data)
+            self.save_events()
+            popup.destroy()
+
+            if self.current_view == self.day_frame:
+                self.build_day_view()
+            elif self.current_view == self.week_frame:
+                current_date = datetime.strptime(self.display_date_var.get(), "%Y-%m-%d")
+                week_start = current_date - timedelta(days=current_date.weekday())
+                self.build_week_view(week_start)
+        ctk.CTkButton(popup, text="Save", command=save).pack(pady=10)
+
 
     def show_detail(self, ev):
          detail_win = ctk.CTkToplevel(self)
