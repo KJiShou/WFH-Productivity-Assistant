@@ -157,7 +157,7 @@ class SchedulePage(ctk.CTkFrame):
             week_start = new_date - timedelta(days=new_date.weekday())
             self.build_week_view(week_start)
         elif self.current_view == self.month_frame:
-            next_month = current.replace(day=28) + timedelta(days=4)  # 一定跳到下个月
+            next_month = current.replace(day=28) + timedelta(days=4)  # Always jumps to next month
             new_date = next_month.replace(day=1)
             self.display_date_var.set(new_date.strftime("%Y-%m-%d"))
             self.build_month_view()
