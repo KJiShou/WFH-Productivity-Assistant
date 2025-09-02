@@ -572,9 +572,7 @@ class SchedulePage(ctk.CTkFrame):
              if self.current_view == self.day_frame:
                  self.build_day_view()
              elif self.current_view == self.week_frame:
-                 current_date = datetime.strptime(self.display_date_var.get(), "%Y-%m-%d")
-                 week_start = current_date - timedelta(days=current_date.weekday())
-                 self.build_week_view(week_start)
+                 self.build_week_view()
              elif self.current_view == self.month_frame:
                  self.build_month_view()
 
@@ -591,9 +589,7 @@ class SchedulePage(ctk.CTkFrame):
              if self.current_view == self.day_frame:
                 self.build_day_view()
              elif self.current_view == self.week_frame:
-                current_date = datetime.strptime(self.display_date_var.get(), "%Y-%m-%d")
-                week_start = current_date - timedelta(days=current_date.weekday())
-                self.build_week_view(week_start)
+                self.build_week_view()
              elif self.current_view == self.month_frame:
                 self.build_month_view()
 
