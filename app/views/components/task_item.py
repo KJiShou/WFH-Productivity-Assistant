@@ -84,11 +84,13 @@ class TaskItem(ctk.CTkFrame):
     def _style_toggle(self):
         if self.task.status == "done":
             self.toggle.configure(fg_color="#2E7D32", text="✓")
+        elif self.task.status == "doing":
+            self.toggle.configure(fg_color="#5288f1", text="-")
         else:
             self.toggle.configure(fg_color="#2B2B2B", text="")
 
     def _toggle_click(self):
-        new_status = "done" if self.task.status != "done" else "doing"
+        new_status = "done" if self.task.status != "done" else "todo"
         self.task.status = new_status
         self._style_toggle()
         self.on_toggle(self.task.id, new_status)
