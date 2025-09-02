@@ -11,10 +11,10 @@ class BaseCalendarView(ctk.CTkFrame):
         self.schedule_page = schedule_page
 
     def build_view(self):
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement build_view()")
 
     def render_events(self):
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement render_events()")
 
  #------- Day View(sub class) ----------
 class DayView(BaseCalendarView):
@@ -76,7 +76,7 @@ class DayView(BaseCalendarView):
 
  #------- Week View(sub class) ----------
 class WeekView(BaseCalendarView):
-    def build_view(self):
+    def build_view(self, week_start_date=None):
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
