@@ -295,14 +295,13 @@ class TaskPage(ctk.CTkFrame):
         today = self._selected_date if self._selected_date else dt.date.today()
         start_week = today - dt.timedelta(days=today.weekday())
         end_week = start_week + dt.timedelta(days=6)
-        last7_start = today - dt.timedelta(days=7)
-        last7_end = today - dt.timedelta(days=1)
+        last_end = today - dt.timedelta(days=1)
 
         groups = {
-            "Last 7 days": [],
+            "Overdue": [],
             "Today": [],
             "This Week": [],
-            "Completed": [],  # completed (last 7 days + today)
+            "Completed": [],
         }
 
         for t in tasks:
@@ -311,7 +310,7 @@ class TaskPage(ctk.CTkFrame):
                     try:
                         d = dt.datetime.strptime(t.due_date, DATE_FMT).date()
                         # Include completed tasks from last 7 days and today
-                        if last7_start <= d <= today:
+                        if d <= today:
                             groups["Completed"].append(t)
                     except ValueError:
                         pass
@@ -324,8 +323,8 @@ class TaskPage(ctk.CTkFrame):
                 except ValueError:
                     pass
 
-            if due and last7_start <= due <= last7_end:
-                groups["Last 7 days"].append(t)
+            if due and due <= last_end:
+                groups["Overdue"].append(t)
             elif due == today:
                 groups["Today"].append(t)
             elif due and start_week <= due <= end_week:
@@ -352,7 +351,7 @@ class TaskPage(ctk.CTkFrame):
                     on_edit_project=self._open_edit_project_by_name,
                 ).pack(fill="x", padx=10, pady=6)
 
-        for key in ["Last 7 days", "Today", "This Week", "Completed"]:
+        for key in ["Overdue", "Today", "This Week", "Completed"]:
             section(key, groups[key])
 
         # planned numbers (use all tasks, not filtered)
