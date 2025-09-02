@@ -40,11 +40,14 @@ class TaskPage(ctk.CTkFrame):
         # Header section with date display and action buttons
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 6))
-        ctk.CTkLabel(
+        # === Real Time Display ===
+        self.timeNow = ctk.CTkLabel(
             top,
-            text=dt.datetime.now().strftime("Today is : %d %B %Y %H:%M:%S"),
+            text="",
             font=("Inter", 12, "bold"),
-        ).pack(anchor="w")
+        )
+        self.timeNow.pack(anchor="w")
+        self.currentTime()
         row = ctk.CTkFrame(top, fg_color="transparent")
         row.pack(fill="x", pady=(4, 0))
         ctk.CTkLabel(
@@ -131,6 +134,21 @@ class TaskPage(ctk.CTkFrame):
         self._menu_task: Optional[Task] = None
 
         self._reload_and_render()
+
+    def currentTime(self):
+        """Update the real-time display every second similar to pomodoro timer"""
+        hour = dt.datetime.now().strftime("%I")
+        minute = dt.datetime.now().strftime("%M")
+        second = dt.datetime.now().strftime("%S")
+        day = dt.datetime.now().strftime("%A")
+        date = dt.datetime.now().strftime("%d")
+        month = dt.datetime.now().strftime("%B")
+        year = dt.datetime.now().strftime("%Y")
+
+        self.timeNow.configure(
+            text=f"Today is: {day} {date} {month} {year} {hour}:{minute}:{second}"
+        )
+        self.timeNow.after(1000, self.currentTime)
 
     def _open_timer_window(self):
         """Open timer window for the selected task"""
