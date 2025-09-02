@@ -149,7 +149,7 @@ class SchedulePage(ctk.CTkFrame):
         elif self.current_view == self.week_frame:
             new_date = current - timedelta(days=7)
             week_start = new_date - timedelta(days=new_date.weekday())
-            self.display_date_var.set(new_date.strftime("%Y-%m-%d"))
+            self.display_date_var.set(week_start.strftime("%Y-%m-%d"))
             self.build_week_view(week_start)
         elif self.current_view == self.month_frame:
             new_date = (current.replace(day=1) - timedelta(days=1)).replace(day=1)
@@ -166,7 +166,7 @@ class SchedulePage(ctk.CTkFrame):
         elif self.current_view == self.week_frame:
             new_date = current + timedelta(days=7)
             week_start = new_date - timedelta(days=new_date.weekday())
-            self.display_date_var.set(new_date.strftime("%Y-%m-%d"))
+            self.display_date_var.set(week_start.strftime("%Y-%m-%d"))
             self.build_week_view(week_start)
         elif self.current_view == self.month_frame:
             next_month = current.replace(day=28) + timedelta(days=4)
@@ -230,8 +230,7 @@ class SchedulePage(ctk.CTkFrame):
                 height=50
             )
             slot.grid(row=hour, column=1, sticky="nsew", padx=(0, 5))
-            slot.bind("<Button-1>"
-                      "", lambda e, h=hour: self.add_event(h))
+            slot.bind("<Button-1>", lambda e, h=hour: self.add_event(h))
             # Store slot in dictionary
             self.slots[hour] = slot
 
@@ -269,7 +268,7 @@ class SchedulePage(ctk.CTkFrame):
 
         #use display date as monday
         if week_start_date is None:
-            current_date = datetime.strptime(self.display_date_var.get(), "%Y-%m-%d").date()
+            current_date = datetime.strptime(self.display_date_var.get(), "%Y-%m-%d")
             week_start_date = current_date - timedelta(days=current_date.weekday())
 
         self.week_slots.clear()
