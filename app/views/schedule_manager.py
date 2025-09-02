@@ -230,8 +230,7 @@ class SchedulePage(ctk.CTkFrame):
                 height=50
             )
             slot.grid(row=hour, column=1, sticky="nsew", padx=(0, 5))
-            slot.bind("<Button-1>"
-                      "", lambda e, h=hour: self.add_event(h))
+            slot.bind("<Button-1>", lambda e, h=hour: self.add_event(h))
             # Store slot in dictionary
             self.slots[hour] = slot
 
