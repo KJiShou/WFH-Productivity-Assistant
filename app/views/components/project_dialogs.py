@@ -1,3 +1,4 @@
+import re
 import tkinter.messagebox as msgbox
 from typing import Optional
 
@@ -34,13 +35,48 @@ class AddProjectDialog(ctk.CTkToplevel):
         ctk.CTkButton(
             bar,
             text="Save",
-            command=lambda: (
-                on_done(
-                    self.e_name.get().strip() or "", self.e_color.get().strip() or None
-                ),
-                self.destroy(),
-            ),
+            command=self._save,
         ).pack(side="right", padx=(0, 16))
+
+        self.on_done = on_done
+
+    def _validate_inputs(self):
+        """Validate project name and color inputs"""
+        name = self.e_name.get().strip()
+        color = self.e_color.get().strip()
+
+        # Validate project name
+        if not name:
+            msgbox.showerror("Validation Error", "Project name cannot be empty.")
+            return False
+
+        if len(name) > 50:
+            msgbox.showerror(
+                "Validation Error", "Project name must be 50 characters or less."
+            )
+            return False
+
+        # Validate color if provided
+        if color:
+            hex_pattern = re.compile(r"^#[0-9a-fA-F]{6}$")
+            if not hex_pattern.match(color):
+                msgbox.showerror(
+                    "Validation Error", "Color must be in hex format (e.g., #FF5733)."
+                )
+                return False
+
+        return True
+
+    def _save(self):
+        """Save project with validation"""
+        if not self._validate_inputs():
+            return
+
+        name = self.e_name.get().strip()
+        color = self.e_color.get().strip() or None
+
+        self.on_done(name, color)
+        self.destroy()
 
 
 # Dialog for editing or deleting existing projects
@@ -80,11 +116,40 @@ class EditProjectDialog(ctk.CTkToplevel):
             side="right", padx=(0, 16)
         )
 
+    def _validate_inputs(self):
+        """Validate project name and color inputs"""
+        name = self.e_name.get().strip()
+        color = self.e_color.get().strip()
+
+        # Validate project name
+        if not name:
+            msgbox.showerror("Validation Error", "Project name cannot be empty.")
+            return False
+
+        if len(name) > 50:
+            msgbox.showerror(
+                "Validation Error", "Project name must be 50 characters or less."
+            )
+            return False
+
+        # Validate color if provided
+        if color:
+            hex_pattern = re.compile(r"^#[0-9a-fA-F]{6}$")
+            if not hex_pattern.match(color):
+                msgbox.showerror(
+                    "Validation Error", "Color must be in hex format (e.g., #FF5733)."
+                )
+                return False
+
+        return True
+
     def _save(self):
+        """Save project with validation"""
+        if not self._validate_inputs():
+            return
+
         name = self.e_name.get().strip()
         color = _hex(self.e_color.get().strip() or None)
-        if not name:
-            return
         self.on_save(self.proj, name, color)
         self.destroy()
 
