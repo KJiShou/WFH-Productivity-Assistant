@@ -290,6 +290,7 @@ class TaskPage(ctk.CTkFrame):
         # Open a new window to show task history with timer record
         history_win = ctk.CTkToplevel(self)
         history_win.title("Task History")
+        history_win.attributes("-topmost", True)
         history_win.geometry("650x500")
         history_win.resizable(True, True)
 
