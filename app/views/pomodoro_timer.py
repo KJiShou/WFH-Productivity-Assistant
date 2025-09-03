@@ -3,27 +3,57 @@ import customtkinter as ctk
 import time
 from PIL import Image
 import winsound
+import json
+import os
+import tkinter.messagebox as messagebox
+from datetime import datetime
+
+STORAGE_PATH = "timer_record.json"
 
 TIMER_TOP_MIDDLE_COLOR = "#565656"
 TIMER_MIDDLE_MIDDLE_COLOR = "#969696"
 TIMER_BOTTOM_MIDDLE_COLOR = "#D9D9D9"
 TIMER_HOVER_COLOR = "#FFFFFF"  # transparency 50%
 
+def save_record(task_id, task_name, start_day, start_datetime, duration_seconds):
+    record = {
+        "task_id": task_id,
+        "task_name": task_name,
+        "start_day": start_day.strftime("%A"),
+        "start_date_time": start_datetime.strftime("%d/%m/%Y %H:%M:%S"),
+        "duration": f"{duration_seconds//60:02d}:{duration_seconds%60:02d}"
+    }
+
+    if os.path.exists(STORAGE_PATH):
+        with open(STORAGE_PATH, "r", encoding="utf-8") as file:
+            try:
+                data = json.load(file)
+            except json.JSONDecodeError:
+                data = []
+    else:
+        data = []
+
+    # Append new record
+    data.append(record)
+
+    with open(STORAGE_PATH, "w", encoding="utf-8") as file:
+        json.dump(data, file, indent=2)
+
 class TimerPage(ctk.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master, fg_color="transparent")
+    def __init__(self, parent, task_id: str, task_name: str):
+        super().__init__(parent, fg_color="transparent")
 
         # === Header ===
-        ctk.CTkLabel(
-            self,
-            text="Timer",
-            font=("Times New Roman", 18, "underline"),
-            text_color=TIMER_HOVER_COLOR,
-        ).pack(anchor="center", padx=10, pady=10)
+        # === Task ID and Name ===
+        self.task_id = task_id
+        self.task_name = task_name
+
+        self.title_label = ctk.CTkLabel(self, text=f"Timer for: {self.task_name}", font=("Arial", 16, "bold", "underline"))
+        self.title_label.pack(pady=10)
 
         # === Real Time Display ===
         self.timeNow = ctk.CTkLabel(self, text="", text_color=TIMER_HOVER_COLOR)
-        self.timeNow.pack(pady=20)
+        self.timeNow.pack(pady=10)
         self.currentTime()
 
         # === Countdown Label ===
@@ -75,15 +105,19 @@ class TimerPage(ctk.CTkFrame):
 
         startImg = ctk.CTkImage(
             Image.open("app/assets/StartIcon.png"),
-            size=(20, 20),
+            size=(20, 20)
         )
         stopImg = ctk.CTkImage(
             Image.open("app/assets/StopIcon.png"),
-            size=(20, 20),
+            size=(20, 20)
         )
         resetImg = ctk.CTkImage(
             Image.open("app/assets/ResetIcon.png"),
-            size=(20, 20),
+            size=(20, 20)
+        )
+        endImg = ctk.CTkImage(
+            Image.open("app/assets/EndIcon.png"),
+            size=(20, 20)
         )
 
         self.startButton = ctk.CTkButton(
@@ -98,6 +132,11 @@ class TimerPage(ctk.CTkFrame):
             self, text="Reset", image=resetImg, command=self.resetTimer
         )
         self.resetButton.pack(pady=0)
+
+        self.endButton = ctk.CTkButton(
+            self, text="  End", image=endImg, command=self.endTimer
+        )
+        self.endButton.pack(pady=10)
 
         # Timer state
         self.run_timer = False
@@ -235,6 +274,7 @@ class TimerPage(ctk.CTkFrame):
 
             self.remaining_second -= 1
             self.timeSet.after(1000, self.updateTimer)
+
         elif self.remaining_second == 0 and self.run_timer:
             self.run_timer = False
             self.timeSet.configure(text="00 : 00")
@@ -260,16 +300,30 @@ class TimerPage(ctk.CTkFrame):
             self.showImagePopup()
             #messagebox.showinfo("Time's Up!", "The countdown is over.")
 
+            save_record(
+                self.task_id,
+                self.task_name,
+                self.start_day,
+                self.start_datetime,
+                self.start_total_seconds
+            )
+
     def startTimer(self):
         if self.run_timer:
             return
 
-        try:
-            minute, second = map(int, self.timeSet.cget("text").split(" : "))
-            self.remaining_second = minute * 60 + second
-            self.totalTime = self.remaining_second
-        except:
-            return
+        # Set the start details only the first run
+        if self.remaining_second == 0:
+            try:
+                minute, second = map(int, self.timeSet.cget("text").split(" : "))
+                self.remaining_second = minute * 60 + second
+                self.totalTime = self.remaining_second
+            except:
+                return
+
+            self.start_day = datetime.now()
+            self.start_datetime = datetime.now()
+            self.start_total_seconds = self.totalTime
 
         self.run_timer = True
         self.hideScrollBar()
@@ -310,8 +364,42 @@ class TimerPage(ctk.CTkFrame):
         self.secondsBox.see(0)
 
         self.remaining_second = 0
+        self.totalTime = 0
         self.progressBar.set(100)
         self.run_timer = False
+
+    def endTimer(self):
+        if not self.start_datetime:  # no active session
+            messagebox.showwarning("No Active Task", "No task is currently running.")
+            return
+
+        # Pause the timer while asking
+        was_running = self.run_timer
+        self.run_timer = False
+
+        confirm = messagebox.askyesno("Confirm End Time", "Are you sure you want to end the timer?")
+        if confirm:
+            used_seconds = self.start_total_seconds - self.remaining_second
+            save_record(
+                self.task_id,
+                self.task_name,
+                self.start_day,
+                self.start_datetime,
+                used_seconds
+            )
+
+            # Reset stored values
+            self.start_day = None
+            self.start_datetime = None
+            self.start_total_seconds = None
+
+            self.resetTimer()
+            messagebox.showinfo("Task Ended", f"Task {self.task_name} has ended.")
+        else:
+            # Resume if it was running
+            self.run_timer = was_running
+            if was_running:
+                self.updateTimer()
 
 # === Run Test App ===
 if __name__ == "__main__":

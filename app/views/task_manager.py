@@ -17,6 +17,7 @@ from app.controllers.task_manager_controller import (
     DATE_FMT,
 )
 from app.controllers.project_manager_controller import ProjectManagerController, Project
+from app.views.TimerRecord import TimerRecordPage
 from app.views.pomodoro_timer import TimerPage
 from app.views.components.date_picker import _hex
 from app.views.components.task_dialogs import AddTaskDialog, EditTaskDialog
@@ -44,7 +45,7 @@ class TaskPage(ctk.CTkFrame):
         self.timeNow = ctk.CTkLabel(
             top,
             text="",
-            font=("Inter", 12, "bold"),
+            font=("Inter", 13, "bold", "underline"),
         )
         self.timeNow.pack(anchor="w")
         self.currentTime()
@@ -55,6 +56,17 @@ class TaskPage(ctk.CTkFrame):
         ).pack(side="left")
         right_cta = ctk.CTkFrame(row, fg_color="transparent")
         right_cta.pack(side="right")
+
+        ctk.CTkButton(
+           right_cta,
+            text="Task History",
+            height = 36,
+            corner_radius = 18,
+            fg_color = "#3E3E3E",
+            text_color = "#FFFFFF",
+            hover_color = "#555555",
+            command=self._open_task_history,
+        ).pack(side="right", padx=(0, 16))
 
         ctk.CTkButton(
             right_cta,
@@ -164,7 +176,11 @@ class TaskPage(ctk.CTkFrame):
             self.timer_window.attributes("-topmost", True)
 
             # Create timer frame with padding
-            timer_frame = TimerPage(self.timer_window)
+            task = self._menu_task
+            timer_frame = TimerPage(
+                self.timer_window,
+                task_id=task.id,
+                task_name=task_title)
             timer_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
             # Handle window close event
@@ -269,6 +285,17 @@ class TaskPage(ctk.CTkFrame):
         self._menu_task = None
         self._reload_and_render()
 
+    # ---------- Task History Section ----------
+    def _open_task_history(self):
+        # Open a new window to show task history with timer record
+        history_win = ctk.CTkToplevel(self)
+        history_win.title("Task History")
+        history_win.geometry("650x500")
+        history_win.resizable(True, True)
+
+        history_page = TimerRecordPage(history_win, "timer_record.json")
+        history_page.pack(fill="both", expand=True, padx=10, pady=10)
+
     # ---------- Calendar date selection ----------
     def _on_date_selected(self, day: Optional[dt.date]):
         # Enhanced: Handle None to clear filter when date is deselected
@@ -284,7 +311,7 @@ class TaskPage(ctk.CTkFrame):
         self.lbl_today_big.grid(row=0, column=0, sticky="w", padx=14, pady=6)
         block = ctk.CTkFrame(panel, fg_color="transparent")
         block.grid(row=0, column=1, sticky="e", padx=14, pady=12)
-        ctk.CTkLabel(block, text="Planned\nToday", font=("Inter", 16, "bold")).pack(
+        ctk.CTkLabel(block, text="Planned Today", font=("Inter", 16, "bold")).pack(
             anchor="e"
         )
         self.l_over = ctk.CTkLabel(block, text="Overdue  0", font=("Inter", 13))
