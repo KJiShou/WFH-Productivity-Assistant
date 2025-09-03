@@ -1,4 +1,5 @@
 import datetime as dt
+from tkinter import messagebox
 from typing import Optional
 
 import customtkinter as ctk
@@ -97,7 +98,10 @@ class AddTaskDialog(BaseTaskDialog):
 
     def _save(self):
         payload = self._values()
-        if not payload["title"]:
+        if not payload.get("date") or not payload.get("date"):
+            messagebox.showerror(
+                "Failed", f"There must be title and due date to add task"
+            )
             return
         self.on_done(payload)
         self.destroy()
@@ -116,5 +120,8 @@ class EditTaskDialog(BaseTaskDialog):
         self.c_status.set(task.status)
 
     def _save(self):
+        if self._values().get("title") == "" or not self._values().get("title"):
+            messagebox.showerror("Failed", f"There must be title to save task")
+            return
         self.on_done(self.task.id, self._values())
         self.destroy()
