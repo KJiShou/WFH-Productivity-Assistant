@@ -1,5 +1,6 @@
 import re
 import tkinter.messagebox as msgbox
+from tkinter import messagebox
 from typing import Optional
 
 import customtkinter as ctk
