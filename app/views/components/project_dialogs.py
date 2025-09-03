@@ -73,7 +73,7 @@ class AddProjectDialog(ctk.CTkToplevel):
             return
 
         name = self.e_name.get().strip()
-        color = self.e_color.get().strip() or None
+        color = self.e_color.get().strip() or "#FFFFFF"
 
         self.on_done(name, color)
         self.destroy()
@@ -149,7 +149,7 @@ class EditProjectDialog(ctk.CTkToplevel):
             return
 
         name = self.e_name.get().strip()
-        color = _hex(self.e_color.get().strip() or None)
+        color = _hex(self.e_color.get().strip() or "#FFFFFF")
         self.on_save(self.proj, name, color)
         self.destroy()
 
