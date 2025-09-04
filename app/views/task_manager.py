@@ -1,5 +1,6 @@
 import datetime as dt
 import tkinter as tk
+from tkinter import messagebox
 from typing import Optional
 
 import customtkinter as ctk
@@ -58,13 +59,13 @@ class TaskPage(ctk.CTkFrame):
         right_cta.pack(side="right")
 
         ctk.CTkButton(
-           right_cta,
+            right_cta,
             text="Task History",
-            height = 36,
-            corner_radius = 18,
-            fg_color = "#3E3E3E",
-            text_color = "#FFFFFF",
-            hover_color = "#555555",
+            height=36,
+            corner_radius=18,
+            fg_color="#3E3E3E",
+            text_color="#FFFFFF",
+            hover_color="#555555",
             command=self._open_task_history,
         ).pack(side="right", padx=(0, 16))
 
@@ -178,9 +179,8 @@ class TaskPage(ctk.CTkFrame):
             # Create timer frame with padding
             task = self._menu_task
             timer_frame = TimerPage(
-                self.timer_window,
-                task_id=task.id,
-                task_name=task_title)
+                self.timer_window, task_id=task.id, task_name=task_title
+            )
             timer_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
             # Handle window close event
@@ -216,7 +216,7 @@ class TaskPage(ctk.CTkFrame):
         )
 
     def _add_task(self, payload: dict):
-        if not payload.get("title"):
+        if not payload.get("title") or not payload.get("due_date"):
             return
         self.tm.add_task(**payload)
         self._reload_and_render()
@@ -281,9 +281,13 @@ class TaskPage(ctk.CTkFrame):
     def _menu_delete(self):
         if not self._menu_task:
             return
-        self.tm.delete_task(self._menu_task.id)
-        self._menu_task = None
-        self._reload_and_render()
+        if messagebox.askyesno(
+            "Delete Project",
+            f"Are you sure you want to delete '{self._menu_task.title}'?\n\nThis action cannot be undone.",
+        ):
+            self.tm.delete_task(self._menu_task.id)
+            self._menu_task = None
+            self._reload_and_render()
 
     # ---------- Task History Section ----------
     def _open_task_history(self):
