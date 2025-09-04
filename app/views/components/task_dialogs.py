@@ -98,7 +98,7 @@ class AddTaskDialog(BaseTaskDialog):
 
     def _save(self):
         payload = self._values()
-        if not payload.get("date") or not payload.get("date"):
+        if not payload.get("title") or not payload.get("date"):
             messagebox.showerror(
                 "Failed", f"There must be title and due date to add task"
             )

@@ -1,18 +1,23 @@
 import json
 import customtkinter as ctk
 import datetime
+from app.controllers.task_manager_controller import TaskManagerController
+
 
 class TimerRecordPage(ctk.CTkFrame):
     def __init__(self, master, json_file="timer_record.json"):
         super().__init__(master, fg_color="transparent")
         self.json_file = json_file
+        self.task_manager = TaskManagerController("tasks.json")
 
-        ctk.CTkLabel(
-            self, text="Timer Record", font=("Inter", 18, "bold")
-        ).pack(pady=(10, 6))
+        ctk.CTkLabel(self, text="Timer Record", font=("Inter", 18, "bold")).pack(
+            pady=(10, 6)
+        )
 
         # Scrollable frame
-        self.record_list = ctk.CTkScrollableFrame(self, corner_radius=14, fg_color="#3F3F3F")
+        self.record_list = ctk.CTkScrollableFrame(
+            self, corner_radius=14, fg_color="#3F3F3F"
+        )
         self.record_list.pack(fill="both", expand=True, padx=10, pady=10)
 
         self.load_records()
@@ -30,16 +35,19 @@ class TimerRecordPage(ctk.CTkFrame):
         except (FileNotFoundError, json.JSONDecodeError):
             data = []
 
-        # Group records by (task_id, task_name)
+        # Group records by task_id
         group = {}
         for rec in data:
-            key = (rec.get("task_id"), rec.get("task_name"))
-            if key not in group:
-                group[key] = []
-            group[key].append(rec)
+            task_id = rec.get("task_id")
+            if task_id not in group:
+                group[task_id] = []
+            group[task_id].append(rec)
 
         # Build dropdown for each task group
-        for (task_id, task_name), records in group.items():
+        for task_id, records in group.items():
+            # Get task name from task manager
+            task = self.task_manager.get_task(task_id)
+            task_name = task.title if task else f"Unknown Task ({task_id})"
             self._create_task_dropdown(task_id, task_name, records)
 
     def _create_task_dropdown(self, task_id, task_name, records):
@@ -70,16 +78,24 @@ class TimerRecordPage(ctk.CTkFrame):
         header = ctk.CTkFrame(details_frame, fg_color="transparent")
         header.pack(fill="x", pady=(4, 2))
         for i, col in enumerate(["Start Day", "Start Time", "Duration"]):
-            ctk.CTkLabel(header, text=col, font=("Inter", 12, "bold"), width=130, anchor="w").grid(row=0, column=i, padx=14)
+            ctk.CTkLabel(
+                header, text=col, font=("Inter", 12, "bold"), width=130, anchor="w"
+            ).grid(row=0, column=i, padx=14)
 
         # Record rows
         for rec in records:
             row = ctk.CTkFrame(details_frame, fg_color="transparent")
             row.pack(fill="x", padx=6, pady=2)
 
-            ctk.CTkLabel(row, text=rec.get("start_day", ""), width=120, anchor="w").grid(row=0, column=0, padx=6)
-            ctk.CTkLabel(row, text=rec.get("start_date_time", ""), width=180, anchor="w").grid(row=0, column=1, padx=6)
-            ctk.CTkLabel(row, text=rec.get("duration", ""), width=80, anchor="w").grid(row=0, column=2, padx=6)
+            ctk.CTkLabel(
+                row, text=rec.get("start_day", ""), width=120, anchor="w"
+            ).grid(row=0, column=0, padx=6)
+            ctk.CTkLabel(
+                row, text=rec.get("start_date_time", ""), width=180, anchor="w"
+            ).grid(row=0, column=1, padx=6)
+            ctk.CTkLabel(row, text=rec.get("duration", ""), width=80, anchor="w").grid(
+                row=0, column=2, padx=6
+            )
 
     def _toggle_details(self, frame):
         if frame.winfo_ismapped():

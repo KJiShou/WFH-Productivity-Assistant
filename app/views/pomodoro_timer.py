@@ -7,6 +7,7 @@ import json
 import os
 import tkinter.messagebox as messagebox
 from datetime import datetime
+from app.controllers.timer_controller import TimerController
 
 STORAGE_PATH = "timer_record.json"
 
@@ -15,29 +16,16 @@ TIMER_MIDDLE_MIDDLE_COLOR = "#969696"
 TIMER_BOTTOM_MIDDLE_COLOR = "#D9D9D9"
 TIMER_HOVER_COLOR = "#FFFFFF"  # transparency 50%
 
-def save_record(task_id, task_name, start_day, start_datetime, duration_seconds):
-    record = {
-        "task_id": task_id,
-        "task_name": task_name,
-        "start_day": start_day.strftime("%A"),
-        "start_date_time": start_datetime.strftime("%d/%m/%Y %H:%M:%S"),
-        "duration": f"{duration_seconds//60:02d}:{duration_seconds%60:02d}"
-    }
 
-    if os.path.exists(STORAGE_PATH):
-        with open(STORAGE_PATH, "r", encoding="utf-8") as file:
-            try:
-                data = json.load(file)
-            except json.JSONDecodeError:
-                data = []
-    else:
-        data = []
+def save_record(task_id, start_day, start_datetime, duration_seconds):
+    timer_controller = TimerController(STORAGE_PATH)
+    start_day_str = start_day.strftime("%A")
+    start_datetime_str = start_datetime.strftime("%d/%m/%Y %H:%M:%S")
+    duration_str = f"{duration_seconds // 60:02d}:{duration_seconds % 60:02d}"
+    timer_controller.add_record(
+        task_id, start_day_str, start_datetime_str, duration_str
+    )
 
-    # Append new record
-    data.append(record)
-
-    with open(STORAGE_PATH, "w", encoding="utf-8") as file:
-        json.dump(data, file, indent=2)
 
 class TimerPage(ctk.CTkFrame):
     def __init__(self, parent, task_id: str, task_name: str):
@@ -48,7 +36,11 @@ class TimerPage(ctk.CTkFrame):
         self.task_id = task_id
         self.task_name = task_name
 
-        self.title_label = ctk.CTkLabel(self, text=f"Timer for: {self.task_name}", font=("Arial", 16, "bold", "underline"))
+        self.title_label = ctk.CTkLabel(
+            self,
+            text=f"Timer for: {self.task_name}",
+            font=("Arial", 16, "bold", "underline"),
+        )
         self.title_label.pack(pady=10)
 
         # === Real Time Display ===
@@ -66,7 +58,7 @@ class TimerPage(ctk.CTkFrame):
         self.progressBar.set(100)
 
         # === Scroll Pickers ===
-        self.scrollFrame = ctk.CTkFrame(self, fg_color = "transparent")
+        self.scrollFrame = ctk.CTkFrame(self, fg_color="transparent")
         self.scrollFrame.pack(pady=10)
 
         self.minutesBox = self.picker(self.scrollFrame, 60, 0, default_value=0)
@@ -88,12 +80,27 @@ class TimerPage(ctk.CTkFrame):
             "corner_radius": 30,  # half of width/height → circle
             "fg_color": "#555555",  # gray background
             "text_color": "white",  # white text
-            "font": ("Times New Roman", 14, "bold")
+            "font": ("Times New Roman", 14, "bold"),
         }
 
-        self.button1 = ctk.CTkButton(self.presetFrame, text="15:00", command=lambda: self.setTime(15, 0), **button_style)
-        self.button2 = ctk.CTkButton(self.presetFrame, text="30:00", command=lambda: self.setTime(30, 0), **button_style)
-        self.button3 = ctk.CTkButton(self.presetFrame, text="60:00", command=lambda: self.setTime(60, 0), **button_style)
+        self.button1 = ctk.CTkButton(
+            self.presetFrame,
+            text="15:00",
+            command=lambda: self.setTime(15, 0),
+            **button_style,
+        )
+        self.button2 = ctk.CTkButton(
+            self.presetFrame,
+            text="30:00",
+            command=lambda: self.setTime(30, 0),
+            **button_style,
+        )
+        self.button3 = ctk.CTkButton(
+            self.presetFrame,
+            text="60:00",
+            command=lambda: self.setTime(60, 0),
+            **button_style,
+        )
 
         self.button1.grid(row=0, column=0, padx=10)
         self.button2.grid(row=0, column=1, padx=10)
@@ -103,22 +110,10 @@ class TimerPage(ctk.CTkFrame):
         self.buttonFrame = ctk.CTkFrame(self)
         self.buttonFrame.pack(pady=10)
 
-        startImg = ctk.CTkImage(
-            Image.open("app/assets/StartIcon.png"),
-            size=(20, 20)
-        )
-        stopImg = ctk.CTkImage(
-            Image.open("app/assets/StopIcon.png"),
-            size=(20, 20)
-        )
-        resetImg = ctk.CTkImage(
-            Image.open("app/assets/ResetIcon.png"),
-            size=(20, 20)
-        )
-        endImg = ctk.CTkImage(
-            Image.open("app/assets/EndIcon.png"),
-            size=(20, 20)
-        )
+        startImg = ctk.CTkImage(Image.open("app/assets/StartIcon.png"), size=(20, 20))
+        stopImg = ctk.CTkImage(Image.open("app/assets/StopIcon.png"), size=(20, 20))
+        resetImg = ctk.CTkImage(Image.open("app/assets/ResetIcon.png"), size=(20, 20))
+        endImg = ctk.CTkImage(Image.open("app/assets/EndIcon.png"), size=(20, 20))
 
         self.startButton = ctk.CTkButton(
             self.buttonFrame, text="Start", image=startImg, command=self.startTimer
@@ -145,6 +140,7 @@ class TimerPage(ctk.CTkFrame):
 
     def showImagePopup(self):
         popup = ctk.CTkToplevel(self)
+        popup.attributes("-topmost", True)
         popup.geometry("400x600")
         popup.grab_set()  # make modal
 
@@ -296,16 +292,17 @@ class TimerPage(ctk.CTkFrame):
             self.secondsBox.selection_set(0)
             self.secondsBox.see(0)
 
-            winsound.PlaySound("app/assets/alarm.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
+            winsound.PlaySound(
+                "app/assets/alarm.wav", winsound.SND_FILENAME | winsound.SND_ASYNC
+            )
             self.showImagePopup()
-            #messagebox.showinfo("Time's Up!", "The countdown is over.")
+            # messagebox.showinfo("Time's Up!", "The countdown is over.")
 
             save_record(
                 self.task_id,
-                self.task_name,
                 self.start_day,
                 self.start_datetime,
-                self.start_total_seconds
+                self.start_total_seconds,
             )
 
     def startTimer(self):
@@ -377,16 +374,12 @@ class TimerPage(ctk.CTkFrame):
         was_running = self.run_timer
         self.run_timer = False
 
-        confirm = messagebox.askyesno("Confirm End Time", "Are you sure you want to end the timer?")
+        confirm = messagebox.askyesno(
+            "Confirm End Time", "Are you sure you want to end the timer?"
+        )
         if confirm:
             used_seconds = self.start_total_seconds - self.remaining_second
-            save_record(
-                self.task_id,
-                self.task_name,
-                self.start_day,
-                self.start_datetime,
-                used_seconds
-            )
+            save_record(self.task_id, self.start_day, self.start_datetime, used_seconds)
 
             # Reset stored values
             self.start_day = None
@@ -400,6 +393,7 @@ class TimerPage(ctk.CTkFrame):
             self.run_timer = was_running
             if was_running:
                 self.updateTimer()
+
 
 # === Run Test App ===
 if __name__ == "__main__":
