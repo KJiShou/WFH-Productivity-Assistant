@@ -216,7 +216,7 @@ class TaskPage(ctk.CTkFrame):
         )
 
     def _add_task(self, payload: dict):
-        if not payload.get("title") or not payload.get("date"):
+        if not payload.get("title") or not payload.get("due_date"):
             return
         self.tm.add_task(**payload)
         self._reload_and_render()
