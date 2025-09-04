@@ -76,7 +76,7 @@ class DayView(BaseCalendarView):
 
  #------- Week View(sub class) ----------
 class WeekView(BaseCalendarView):
-    def build_view(self, week_start_date=None):
+    def build_view(self):
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -498,7 +498,7 @@ class SchedulePage(ctk.CTkFrame):
             self.events.setdefault(date_key, []).append(event_data)
             self.save_events()
             popup.destroy()
-            self.current_view.build_view()
+            self.current_view.render_events()
         ctk.CTkButton(popup, text="Save", command=save).pack(pady=10)
 
     def show_detail(self, ev):
@@ -519,7 +519,7 @@ class SchedulePage(ctk.CTkFrame):
              ev["desc"] = desc_entry.get("1.0", "end").strip()
              self.save_events()
              detail_win.destroy()
-             self.current_view.build_view()
+             self.current_view.render_events()
          def delete_event():
              date_key = ev.get("date")
              if date_key in self.events:
@@ -528,7 +528,7 @@ class SchedulePage(ctk.CTkFrame):
                      del self.events[date_key]
              self.save_events()
              detail_win.destroy()
-             self.current_view.build_view()
+             self.current_view.render_events()
          ctk.CTkButton(
              detail_win,
              text="Save",
